@@ -1,0 +1,56 @@
+import { Prisma } from "@prisma/client";
+import { AuthError } from "./auth-guard";
+
+// ============================================================================
+// Server action xatolarini foydalanuvchi ko'radigan tushunarli xabarga aylantiradi.
+// Prisma xom xatolari (P2002 unique, P2003 FK, ...) o'rniga aniq matn.
+// ============================================================================
+
+const FIELD_LABELS: Record<string, string> = {
+  unitNumber: "Unit raqami",
+  vin: "VIN",
+  licensePlate: "Davlat raqami",
+  trailerNumber: "Trailer raqami",
+  cdlNumber: "CDL raqami",
+  motiveGateway: "Motive gateway",
+  camera: "Kamera",
+  prePass: "PrePass",
+  eldPt30: "ELD PT30",
+  tablet: "Planshet",
+  email: "Email",
+};
+
+export function toUserMessage(e: unknown): string {
+  if (e instanceof AuthError) return e.message;
+
+  if (e instanceof Prisma.PrismaClientKnownRequestError) {
+    if (e.code === "P2002") {
+      const targets = (e.meta?.target as string[] | undefined) ?? [];
+      const labels = targets.map((t) => FIELD_LABELS[t] ?? t).join(", ");
+      return labels
+        ? `Bu qiymat allaqachon band: ${labels}. Fleet bo'yicha takrorlanmas bo'lishi kerak.`
+        : "Bu yozuv allaqachon mavjud (takrorlanmas maydon buzildi).";
+    }
+    if (e.code === "P2003") return "Bog'liq yozuv topilmadi (masalan, tanlangan haydovchi/unit mavjud emas).";
+    if (e.code === "P2025") return "Yozuv topilmadi.";
+  }
+
+  if (e instanceof Error && e.message) return e.message;
+  return "Kutilmagan xatolik yuz berdi. Qaytadan urinib ko'ring.";
+}
+
+/** Validatsiya xatosi — foydalanuvchiga ko'rsatiladi. */
+export class ValidationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "ValidationError";
+  }
+}
+
+/** Bo'sh/yo'q qiymatni tekshiradi. */
+export function requireField<T>(value: T, label: string): NonNullable<T> {
+  if (value === undefined || value === null || (typeof value === "string" && value.trim() === "")) {
+    throw new ValidationError(`"${label}" majburiy maydon.`);
+  }
+  return value as NonNullable<T>;
+}

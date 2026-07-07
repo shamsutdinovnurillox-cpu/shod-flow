@@ -1,0 +1,381 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// =======================
+// SYSTEM & USERS
+// =======================
+model User {
+  id           String      @id @default(uuid())
+  email        String      @unique
+  name         String
+  passwordHash String
+  role         Role        @default(FLEET_USER)
+  department   Department  @default(FLEET)
+  isActive     Boolean     @default(true)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  AuditLogs    AuditLog[]
+}
+
+enum Role {
+  ADMIN
+  FLEET_USER
+  SAFETY_USER
+}
+
+enum Department {
+  ADMIN
+  FLEET
+  SAFETY
+}
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  user       User     @relation(fields: [userId], references: [id])
+  userId     String
+  action     String   // CREATE, UPDATE, DELETE, UPLOAD, ASSIGN, etc.
+  entityType String   // Truck, Driver, Service, vs.
+  entityId   String
+  details    Json?    // O'zgarishlar haqida metadata
+  timestamp  DateTime @default(now())
+}
+
+// =======================
+// MASTER RECORDS (Fleet & Safety)
+// =======================
+model Driver {
+  id                String    @id @default(uuid())
+  firstName         String
+  lastName          String
+  status            DriverStatus @default(ACTIVE)
+  dob               DateTime
+  cdlNumber         String    @unique
+  cdlState          String
+  cdlIssueDate      DateTime
+  cdlExpiryDate     DateTime
+  medCardExpiryDate DateTime
+  hireDate          DateTime
+  terminationDate   DateTime?
+  notes             String?
+
+  assignments       Assignment[]
+  accidents         Accident[]
+  cargoClaims       CargoClaim[]
+  inspections       Inspection[]
+  insurances        Insurance[]
+
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+enum DriverStatus {
+  ACTIVE
+  TERMINATED
+}
+
+model Truck {
+  id           String   @id @default(uuid())
+  unitNumber   String   @unique
+  vin          String   @unique
+  licensePlate String   @unique
+  make         String
+  year         Int
+  ownershipType OwnershipType
+  location     String
+  status       AssetStatus @default(UNASSIGNED)
+  notes        String?
+
+  // Devices
+  motiveGateway String?  @unique
+  camera        String?  @unique
+  prePass       String?  @unique
+  eldPt30       String?  @unique
+  tablet        String?  @unique
+  chains        Boolean  @default(false)
+
+  assignments   Assignment[]
+  services      Service[]
+  expenses      Expense[]
+  accidents     Accident[]
+  cargoClaims   CargoClaim[]
+  inspections   Inspection[]
+  insurances    Insurance[]
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Trailer {
+  id                   String   @id @default(uuid())
+  trailerNumber        String   @unique
+  vin                  String   @unique
+  year                 Int
+  make                 String
+  licensePlate         String   @unique
+  state                String
+  location             String
+  pickupDate           DateTime
+  annualInspectionDate DateTime
+  status               TrailerStatus @default(UNASSIGNED)
+  dormantDays          Int      @default(0)
+  notes                String?
+
+  assignments          Assignment[]
+  services             Service[]
+  expenses             Expense[]
+
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+}
+
+enum OwnershipType {
+  COMPANY
+  LEASED
+  OWNER_OPERATOR
+}
+
+enum AssetStatus {
+  UNASSIGNED
+  ASSIGNED
+  IN_SERVICE
+}
+
+enum TrailerStatus {
+  UNASSIGNED
+  EMPTY
+  BOOKED
+  LANE
+  SERVICE
+  LOADED
+}
+
+// =======================
+// FLEET WORKSPACE
+// =======================
+model Assignment {
+  id          String    @id @default(uuid())
+  driver      Driver?   @relation(fields: [driverId], references: [id])
+  driverId    String?
+  truck       Truck?    @relation(fields: [truckId], references: [id])
+  truckId     String?
+  trailer     Trailer?  @relation(fields: [trailerId], references: [id])
+  trailerId   String?
+  
+  pickupDate  DateTime
+  dropoffDate DateTime?
+  location    String? // City/State
+  reason      String? // Drop reason/status
+  notes       String?
+  isActive    Boolean   @default(true)
+  
+  createdAt   DateTime  @default(now())
+}
+
+model Service {
+  id             String    @id @default(uuid())
+  entityType     String    // "TRUCK" or "TRAILER"
+  truck          Truck?    @relation(fields: [truckId], references: [id])
+  truckId        String?
+  trailer        Trailer?  @relation(fields: [trailerId], references: [id])
+  trailerId      String?
+  
+  serviceDate    DateTime
+  serviceType    String
+  status         ServiceStatus @default(IN_PROGRESS)
+  shop           String
+  mechanic       String?
+  cost           Float?    // Optional for approved rental service
+  odometer       Int?      // Faqat truck uchun
+  arrivalTime    DateTime?
+  completionTime DateTime?
+  description    String?
+  
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+}
+
+enum ServiceStatus {
+  IN_PROGRESS
+  COMPLETED
+}
+
+model Expense {
+  id            String    @id @default(uuid())
+  entityType    String    // "TRUCK", "TRAILER" yoki "FLEET" (umumiy)
+  truck         Truck?    @relation(fields: [truckId], references: [id])
+  truckId       String?
+  trailer       Trailer?  @relation(fields: [trailerId], references: [id])
+  trailerId     String?
+
+  date          DateTime
+  category      ExpenseCategory
+  vendor        String
+  amount        Float
+  paymentStatus PaymentStatus @default(PENDING)
+  paymentMethod String?
+  description   String?
+  attachmentUrl String?   // S3 file URL
+
+  createdAt     DateTime  @default(now())
+}
+
+enum ExpenseCategory {
+  MAINTENANCE
+  REPAIR
+  PARTS
+  SERVICE
+  PARKING
+  WASH
+  EQUIPMENT
+  REGISTRATION
+  PERMITS
+  OTHER
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+}
+
+// =======================
+// SAFETY WORKSPACE
+// =======================
+model Insurance {
+  id             String    @id @default(uuid())
+  type           InsuranceType
+  driver         Driver?   @relation(fields: [driverId], references: [id])
+  driverId       String?
+  truck          Truck?    @relation(fields: [truckId], references: [id])
+  truckId        String?
+  
+  status         InsuranceStatus @default(ACTIVE)
+  expiryDate     DateTime?
+  rejectionNotes String?   // Reject qilinganda sababini saqlash uchun
+  
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+}
+
+enum InsuranceType {
+  OCC_ACC       // Driver uchun
+  PD_BOBTAIL    // Truck uchun
+}
+
+enum InsuranceStatus {
+  ACTIVE
+  REMOVED
+  REJECTED
+  EXPIRED
+  MISSING
+}
+
+model Accident {
+  id                   String   @id @default(uuid())
+  driver               Driver   @relation(fields: [driverId], references: [id])
+  driverId             String
+  truck                Truck?   @relation(fields: [truckId], references: [id])
+  truckId              String?
+  
+  date                 DateTime
+  location             String
+  fault                String   // M-n: AT_FAULT, NOT_AT_FAULT
+  postAccidentTestDone Boolean  @default(false)
+  claimNumber          String?
+  adjuster             String?
+  status               EventStatus @default(PENDING)
+  notes                String?
+
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+}
+
+model CargoClaim {
+  id          String   @id @default(uuid())
+  driver      Driver   @relation(fields: [driverId], references: [id])
+  driverId    String
+  truck       Truck?   @relation(fields: [truckId], references: [id])
+  truckId     String?
+  
+  date        DateTime
+  location    String
+  loadNumber  String
+  broker      String
+  claimNumber String?
+  adjuster    String?
+  status      EventStatus @default(PENDING)
+  notes       String?
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Inspection {
+  id             String   @id @default(uuid())
+  driver         Driver   @relation(fields: [driverId], references: [id])
+  driverId       String
+  truck          Truck?   @relation(fields: [truckId], references: [id])
+  truckId        String?
+  
+  date           DateTime
+  state          String
+  level          Int
+  violations     String?
+  bonusOrPenalty Float?
+  status         InspectionStatus @default(PENDING_REVIEW)
+  notes          String?
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+enum EventStatus {
+  PENDING
+  CLOSED
+}
+
+enum InspectionStatus {
+  CLEAN
+  VIOLATION
+  PENDING_REVIEW
+  CLOSED
+}
+
+// =======================
+// SYSTEM MODULES (Docs & Notifications)
+// =======================
+model Document {
+  id         String   @id @default(uuid())
+  entityType String   // DRIVER, TRUCK, TRAILER, ACCIDENT, CLAIM, INSPECTION, FLEET_GENERIC
+  entityId   String
+  type       String   // REGISTRATION, ANNUAL_INSPECTION, CDL, MED_CARD, COI, etc.
+  issueDate  DateTime?
+  expiryDate DateTime?
+  fileUrl    String   // S3 file key
+  uploadedBy String   // User ID
+  
+  createdAt  DateTime @default(now())
+}
+
+model Notification {
+  id         String   @id @default(uuid())
+  type       String   // EXPIRING_DOC, LONG_SERVICE, MISSING_TEST va h.k.
+  priority   String   // LOW, MEDIUM, HIGH, CRITICAL
+  entityType String   // DRIVER, TRUCK, TRAILER, vs.
+  entityId   String
+  message    String
+  status     NotificationStatus @default(OPEN)
+  dueDate    DateTime?
+
+  createdAt  DateTime @default(now())
+}
+
+enum NotificationStatus {
+  OPEN
+  RESOLVED
+  SNOOZED
+}
