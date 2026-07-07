@@ -12,7 +12,7 @@ const today = () => new Date().toISOString().split("T")[0];
 
 const STATUS_STYLES: Record<string, string> = {
   ASSIGNED: "bg-blue-50 text-blue-700",
-  UNASSIGNED: "bg-gray-100 text-gray-600",
+  UNASSIGNED: "bg-surface-2 text-muted",
   IN_SERVICE: "bg-yellow-50 text-yellow-700",
 };
 
@@ -60,7 +60,7 @@ export function TruckProfileClient({ truck, drivers }: { truck: TruckProfile; dr
 
   return (
     <div className="space-y-8">
-      <Link href="/fleet/trucks" className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-900">
+      <Link href="/fleet/trucks" className="inline-flex items-center gap-2 text-sm text-muted hover:text-fg">
         <ArrowLeft className="h-4 w-4" /> Back to Trucks
       </Link>
 
@@ -69,16 +69,16 @@ export function TruckProfileClient({ truck, drivers }: { truck: TruckProfile; dr
         <div className="flex items-center gap-4">
           <div className="p-3 bg-blue-100 text-blue-600 rounded-xl"><Truck className="h-8 w-8" /></div>
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">{truck.unitNumber}</h1>
-            <p className="text-gray-500">{truck.make} · {truck.year} · {truck.ownershipType}</p>
+            <h1 className="text-3xl font-bold text-fg">{truck.unitNumber}</h1>
+            <p className="text-muted">{truck.make} · {truck.year} · {truck.ownershipType}</p>
           </div>
-          <span className={`ml-2 inline-flex rounded-full px-3 py-1 text-xs font-semibold ${STATUS_STYLES[truck.status] ?? "bg-gray-100 text-gray-600"}`}>
+          <span className={`ml-2 inline-flex rounded-full px-3 py-1 text-xs font-semibold ${STATUS_STYLES[truck.status] ?? "bg-surface-2 text-muted"}`}>
             {truck.status}
           </span>
         </div>
         <div className="flex gap-3">
           <button onClick={() => setModal("assign")} className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">Assign Driver</button>
-          <button onClick={() => setModal("move")} className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Move / Drop</button>
+          <button onClick={() => setModal("move")} className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-fg hover:bg-surface-2">Move / Drop</button>
         </div>
       </div>
 
@@ -101,13 +101,13 @@ export function TruckProfileClient({ truck, drivers }: { truck: TruckProfile; dr
 
         <DetailPanel title={`Assignment History (${truck.assignments.length})`}>
           {truck.assignments.length === 0 ? (
-            <p className="text-sm text-gray-500 py-4">No assignments yet.</p>
+            <p className="text-sm text-muted py-4">No assignments yet.</p>
           ) : (
-            <ul className="divide-y divide-gray-100">
+            <ul className="divide-y divide-border">
               {truck.assignments.map((a) => (
                 <li key={a.id} className="py-3 flex items-center justify-between text-sm">
-                  <span className="font-medium text-gray-900">{a.driver ? `${a.driver.firstName} ${a.driver.lastName}` : "—"}</span>
-                  <span className="text-gray-500">
+                  <span className="font-medium text-fg">{a.driver ? `${a.driver.firstName} ${a.driver.lastName}` : "—"}</span>
+                  <span className="text-muted">
                     {new Date(a.pickupDate).toLocaleDateString()} → {a.dropoffDate ? new Date(a.dropoffDate).toLocaleDateString() : "present"}
                     {a.isActive && <span className="ml-2 rounded-full bg-green-50 px-2 py-0.5 text-xs text-green-700">active</span>}
                   </span>

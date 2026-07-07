@@ -17,6 +17,12 @@ model User {
   role         Role        @default(FLEET_USER)
   department   Department  @default(FLEET)
   isActive     Boolean     @default(true)
+  // Granular ruxsatlar (modul kalitlari, masalan "fleet.trucks").
+  // Bo'sh massiv = bo'lim ichida to'liq kirish (default). ADMIN — hammasi.
+  permissions  String[]    @default([])
+  // Ikki faktorli autentifikatsiya (TOTP).
+  mfaEnabled   Boolean     @default(false)
+  mfaSecret    String?     // base32 TOTP maxfiy kaliti (mfaEnabled=false bo'lsa — sozlash bosqichida)
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
   AuditLogs    AuditLog[]

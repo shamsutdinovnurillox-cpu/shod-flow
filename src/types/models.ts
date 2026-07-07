@@ -1,7 +1,10 @@
-import type { Prisma, Truck, Trailer, Driver, Document, AuditLog } from "@prisma/client";
+import type { Prisma, Truck, Trailer, Driver, Document, AuditLog, User } from "@prisma/client";
 
 // Client komponentlar uchun umumiy tip ta'riflari (Prisma'dan olingan).
 export type { Truck, Trailer, Driver, Document };
+
+// Foydalanuvchi (parol hash'isiz — client'ga xavfsiz).
+export type UserRow = Pick<User, "id" | "email" | "name" | "role" | "department" | "isActive" | "permissions" | "mfaEnabled" | "createdAt">;
 
 export type ServiceWithUnit = Prisma.ServiceGetPayload<{ include: { truck: true; trailer: true } }>;
 export type ExpenseWithUnit = Prisma.ExpenseGetPayload<{ include: { truck: true; trailer: true } }>;

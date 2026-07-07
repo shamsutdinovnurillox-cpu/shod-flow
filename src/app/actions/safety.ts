@@ -2,7 +2,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
-import { requireUser, requireDepartment } from "@/lib/auth-guard";
+import { requireUser, requirePermission } from "@/lib/auth-guard";
 import { toUserMessage, requireField, ValidationError } from "@/lib/errors";
 import type { InsuranceType, EventStatus, InspectionStatus } from "@prisma/client";
 
@@ -34,7 +34,7 @@ export async function getDrivers() {
 }
 
 export async function createDriver(data: DriverInput) {
-  const user = await requireDepartment("SAFETY");
+  const user = await requirePermission("safety.drivers");
   try {
     requireField(data.firstName, "Ism");
     requireField(data.lastName, "Familiya");
@@ -79,7 +79,7 @@ export interface InsuranceInput {
 }
 
 export async function getInsurances() {
-  await requireDepartment("SAFETY");
+  await requirePermission("safety.insurance");
   return prisma.insurance.findMany({
     include: { driver: true, truck: true },
     orderBy: { createdAt: "desc" },
@@ -87,7 +87,7 @@ export async function getInsurances() {
 }
 
 export async function createInsurance(data: InsuranceInput) {
-  const user = await requireDepartment("SAFETY");
+  const user = await requirePermission("safety.insurance");
   try {
     if (data.type === "OCC_ACC") {
       requireField(data.driverId, "Haydovchi");
@@ -132,7 +132,7 @@ export interface AccidentInput {
 }
 
 export async function getAccidents() {
-  await requireDepartment("SAFETY");
+  await requirePermission("safety.accidents");
   return prisma.accident.findMany({
     include: { driver: true, truck: true },
     orderBy: [{ status: "asc" }, { createdAt: "desc" }],
@@ -140,7 +140,7 @@ export async function getAccidents() {
 }
 
 export async function createAccident(data: AccidentInput) {
-  const user = await requireDepartment("SAFETY");
+  const user = await requirePermission("safety.accidents");
   try {
     requireField(data.driverId, "Haydovchi");
     requireField(data.location, "Manzil");
@@ -184,7 +184,7 @@ export interface CargoClaimInput {
 }
 
 export async function getCargoClaims() {
-  await requireDepartment("SAFETY");
+  await requirePermission("safety.claims");
   return prisma.cargoClaim.findMany({
     include: { driver: true, truck: true },
     orderBy: [{ status: "asc" }, { createdAt: "desc" }],
@@ -192,7 +192,7 @@ export async function getCargoClaims() {
 }
 
 export async function createCargoClaim(data: CargoClaimInput) {
-  const user = await requireDepartment("SAFETY");
+  const user = await requirePermission("safety.claims");
   try {
     requireField(data.driverId, "Haydovchi");
     requireField(data.location, "Manzil");
@@ -239,7 +239,7 @@ export interface InspectionInput {
 }
 
 export async function getInspections() {
-  await requireDepartment("SAFETY");
+  await requirePermission("safety.inspections");
   return prisma.inspection.findMany({
     include: { driver: true, truck: true },
     orderBy: [{ status: "asc" }, { createdAt: "desc" }],
@@ -247,7 +247,7 @@ export async function getInspections() {
 }
 
 export async function createInspection(data: InspectionInput) {
-  const user = await requireDepartment("SAFETY");
+  const user = await requirePermission("safety.inspections");
   try {
     requireField(data.driverId, "Haydovchi");
     requireField(data.state, "Shtat");

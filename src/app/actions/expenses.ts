@@ -2,7 +2,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
-import { requireDepartment } from "@/lib/auth-guard";
+import { requirePermission } from "@/lib/auth-guard";
 import { toUserMessage, requireField, ValidationError } from "@/lib/errors";
 import type { ExpenseCategory } from "@prisma/client";
 
@@ -18,7 +18,7 @@ export interface ExpenseInput {
 }
 
 export async function getExpenses() {
-  await requireDepartment("FLEET");
+  await requirePermission("fleet.expenses");
   return prisma.expense.findMany({
     include: { truck: true, trailer: true },
     orderBy: { createdAt: "desc" },
@@ -26,7 +26,7 @@ export async function getExpenses() {
 }
 
 export async function createExpense(data: ExpenseInput) {
-  const user = await requireDepartment("FLEET");
+  const user = await requirePermission("fleet.expenses");
   try {
     requireField(data.vendor, "Vendor");
     if (data.entityType !== "FLEET") requireField(data.unitId, "Unit");

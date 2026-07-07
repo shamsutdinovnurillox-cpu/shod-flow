@@ -2,7 +2,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
-import { requireDepartment } from "@/lib/auth-guard";
+import { requirePermission } from "@/lib/auth-guard";
 import { toUserMessage, requireField, ValidationError } from "@/lib/errors";
 
 export interface ServiceInput {
@@ -16,7 +16,7 @@ export interface ServiceInput {
 }
 
 export async function getServices() {
-  await requireDepartment("FLEET");
+  await requirePermission("fleet.services");
   return prisma.service.findMany({
     include: { truck: true, trailer: true },
     orderBy: { createdAt: "desc" },
@@ -24,7 +24,7 @@ export async function getServices() {
 }
 
 export async function createService(data: ServiceInput) {
-  const user = await requireDepartment("FLEET");
+  const user = await requirePermission("fleet.services");
   try {
     requireField(data.unitId, "Unit");
     requireField(data.serviceType, "Xizmat turi");

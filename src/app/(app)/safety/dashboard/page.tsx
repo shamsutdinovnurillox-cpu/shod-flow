@@ -19,23 +19,23 @@ export default async function SafetyDashboard() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">Safety Dashboard</h1>
-        <p className="text-gray-500 mt-1">Driver compliance, incidents, and inspections.</p>
+        <h1 className="text-3xl font-bold text-fg">Safety Dashboard</h1>
+        <p className="text-muted mt-1">Driver compliance, incidents, and inspections.</p>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {cards.map((c) => {
           const Icon = c.icon;
           return (
-            <div key={c.label} className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+            <div key={c.label} className="bg-surface rounded-xl border border-border p-6 shadow-sm">
               <div className="flex items-center gap-4">
                 <div className={`p-3 rounded-lg ${c.color}`}><Icon className="h-6 w-6" /></div>
                 <div className="min-w-0">
-                  <p className="text-sm font-medium text-gray-500">{c.label}</p>
-                  <p className="text-2xl font-bold text-gray-900">{c.value}</p>
+                  <p className="text-sm font-medium text-muted">{c.label}</p>
+                  <p className="text-2xl font-bold text-fg">{c.value}</p>
                 </div>
               </div>
-              <p className="text-xs text-gray-400 mt-3">{c.sub}</p>
+              <p className="text-xs text-faint mt-3">{c.sub}</p>
             </div>
           );
         })}

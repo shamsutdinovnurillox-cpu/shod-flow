@@ -48,7 +48,7 @@ export function CargoClaimsClient({ initialClaims, drivers, trucks }: { initialC
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold text-gray-900">Cargo Claims</h1>
+        <h1 className="text-2xl font-semibold text-fg">Cargo Claims</h1>
         <button
           onClick={() => setIsModalOpen(true)}
           className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 transition-all"
@@ -58,10 +58,10 @@ export function CargoClaimsClient({ initialClaims, drivers, trucks }: { initialC
         </button>
       </div>
 
-      <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+      <div className="rounded-xl border border-border bg-surface shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm text-gray-600">
-            <thead className="bg-gray-50 text-gray-700">
+          <table className="w-full text-left text-sm text-muted">
+            <thead className="bg-surface-2 text-fg">
               <tr>
                 <th className="px-6 py-4 font-medium">Claim #</th>
                 <th className="px-6 py-4 font-medium">Driver</th>
@@ -70,17 +70,17 @@ export function CargoClaimsClient({ initialClaims, drivers, trucks }: { initialC
                 <th className="px-6 py-4 font-medium">Status</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-border">
               {claims.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-6 py-8 text-center text-gray-500">
+                  <td colSpan={5} className="px-6 py-8 text-center text-muted">
                     No cargo claims filed.
                   </td>
                 </tr>
               ) : (
                 claims.map((claim) => (
-                  <tr key={claim.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-4 font-medium text-gray-900">{claim.claimNumber}</td>
+                  <tr key={claim.id} className="hover:bg-surface-2 transition-colors">
+                    <td className="px-6 py-4 font-medium text-fg">{claim.claimNumber}</td>
                     <td className="px-6 py-4">{claim.driver?.firstName} {claim.driver?.lastName}</td>
                     <td className="px-6 py-4">{claim.loadNumber}</td>
                     <td className="px-6 py-4 max-w-xs truncate">{claim.notes}</td>
@@ -102,54 +102,54 @@ export function CargoClaimsClient({ initialClaims, drivers, trucks }: { initialC
 
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">File Cargo Claim</h2>
+          <div className="w-full max-w-md rounded-2xl bg-surface p-6 shadow-2xl">
+            <h2 className="text-xl font-bold text-fg mb-4">File Cargo Claim</h2>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Claim Number</label>
-                  <input required type="text" className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none" 
+                  <label className="block text-sm font-medium text-fg">Claim Number</label>
+                  <input required type="text" className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-blue-500 focus:outline-none" 
                     value={formData.claimNumber} onChange={(e) => setFormData({...formData, claimNumber: e.target.value})} />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Driver</label>
-                  <select required className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                  <label className="block text-sm font-medium text-fg">Driver</label>
+                  <select required className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
                     value={formData.driverId} onChange={(e) => setFormData({...formData, driverId: e.target.value})}>
                     {drivers?.map(d => <option key={d.id} value={d.id}>{d.firstName} {d.lastName}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Truck (Optional)</label>
-                  <select className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                  <label className="block text-sm font-medium text-fg">Truck (Optional)</label>
+                  <select className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
                     value={formData.truckId} onChange={(e) => setFormData({...formData, truckId: e.target.value})}>
                     <option value="">None</option>
                     {trucks?.map(t => <option key={t.id} value={t.id}>{t.unitNumber}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Location</label>
-                  <input required type="text" className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none" 
+                  <label className="block text-sm font-medium text-fg">Location</label>
+                  <input required type="text" className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-blue-500 focus:outline-none" 
                     value={formData.location} onChange={(e) => setFormData({...formData, location: e.target.value})} />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Load Number</label>
-                  <input required type="text" className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none" 
+                  <label className="block text-sm font-medium text-fg">Load Number</label>
+                  <input required type="text" className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-blue-500 focus:outline-none" 
                     value={formData.loadNumber} onChange={(e) => setFormData({...formData, loadNumber: e.target.value})} />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Broker</label>
-                  <input required type="text" className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none" 
+                  <label className="block text-sm font-medium text-fg">Broker</label>
+                  <input required type="text" className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-blue-500 focus:outline-none" 
                     value={formData.broker} onChange={(e) => setFormData({...formData, broker: e.target.value})} />
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700">Notes (Optional)</label>
-                <textarea rows={4} className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none" 
+                <label className="block text-sm font-medium text-fg">Notes (Optional)</label>
+                <textarea rows={4} className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-blue-500 focus:outline-none" 
                   value={formData.notes} onChange={(e) => setFormData({...formData, notes: e.target.value})} />
               </div>
               
               <div className="mt-6 flex justify-end gap-3">
-                <button type="button" onClick={() => setIsModalOpen(false)} className="rounded-lg px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100">Cancel</button>
+                <button type="button" onClick={() => setIsModalOpen(false)} className="rounded-lg px-4 py-2 text-sm font-medium text-fg hover:bg-surface-2">Cancel</button>
                 <button type="submit" disabled={loading} className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50">
                   {loading ? "Saving..." : "Save Claim"}
                 </button>

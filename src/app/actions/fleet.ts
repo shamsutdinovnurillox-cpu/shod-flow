@@ -2,7 +2,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
-import { requireUser, requireDepartment } from "@/lib/auth-guard";
+import { requireUser, requirePermission } from "@/lib/auth-guard";
 import { toUserMessage, requireField, ValidationError } from "@/lib/errors";
 import type { OwnershipType, TrailerStatus } from "@prisma/client";
 
@@ -29,7 +29,7 @@ export async function getTrucks() {
 }
 
 export async function createTruck(data: TruckInput) {
-  const user = await requireDepartment("FLEET");
+  const user = await requirePermission("fleet.trucks");
   try {
     requireField(data.unitNumber, "Unit raqami");
     requireField(data.vin, "VIN");
@@ -85,7 +85,7 @@ export async function getTrailers() {
 }
 
 export async function createTrailer(data: TrailerInput) {
-  const user = await requireDepartment("FLEET");
+  const user = await requirePermission("fleet.trailers");
   try {
     requireField(data.trailerNumber, "Trailer raqami");
     requireField(data.vin, "VIN");
@@ -140,7 +140,7 @@ export async function getTruckById(id: string) {
 
 /** Truck'ni haydovchiga biriktiradi → status ASSIGNED, tarixga yozuv. */
 export async function assignTruck(input: { truckId: string; driverId: string; pickupDate: string }) {
-  const user = await requireDepartment("FLEET");
+  const user = await requirePermission("fleet.trucks");
   try {
     requireField(input.truckId, "Truck");
     requireField(input.driverId, "Haydovchi");
@@ -185,7 +185,7 @@ export async function moveTruck(input: {
   reason?: string;
   notes?: string;
 }) {
-  const user = await requireDepartment("FLEET");
+  const user = await requirePermission("fleet.trucks");
   try {
     requireField(input.truckId, "Truck");
 
@@ -234,7 +234,7 @@ export async function getTrailerById(id: string) {
 
 /** Trailer'ni haydovchiga biriktiradi → status EMPTY, tarixga yozuv. */
 export async function assignTrailer(input: { trailerId: string; driverId: string; pickupDate: string }) {
-  const user = await requireDepartment("FLEET");
+  const user = await requirePermission("fleet.trailers");
   try {
     requireField(input.trailerId, "Trailer");
     requireField(input.driverId, "Haydovchi");
@@ -267,7 +267,7 @@ export async function assignTrailer(input: { trailerId: string; driverId: string
 
 /** Drop — faol biriktiruvni yopadi (manzil/sabab bilan) → status UNASSIGNED. */
 export async function dropTrailer(input: { trailerId: string; location?: string; reason?: string; notes?: string }) {
-  const user = await requireDepartment("FLEET");
+  const user = await requirePermission("fleet.trailers");
   try {
     requireField(input.trailerId, "Trailer");
 
@@ -297,7 +297,7 @@ export async function dropTrailer(input: { trailerId: string; location?: string;
 
 /** Trailer cargo statusini yangilaydi (Empty/Booked/Lane/Service/Loaded). */
 export async function setTrailerStatus(input: { trailerId: string; status: string }) {
-  const user = await requireDepartment("FLEET");
+  const user = await requirePermission("fleet.trailers");
   try {
     requireField(input.trailerId, "Trailer");
     await prisma.trailer.update({

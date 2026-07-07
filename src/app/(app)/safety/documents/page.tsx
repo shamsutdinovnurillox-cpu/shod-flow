@@ -1,7 +1,9 @@
 import { getDocuments } from "@/app/actions/documents";
+import { requireModule } from "@/lib/auth-guard";
 import { DocumentsClient } from "@/components/fleet/DocumentsClient"; // Reusing the same client component for now
 
 export default async function SafetyDocumentsPage() {
+  await requireModule("safety.documents");
   const documents = await getDocuments();
   
   // In a real app, we might filter documents by entityType === "DRIVER" || entityType === "COMPANY"

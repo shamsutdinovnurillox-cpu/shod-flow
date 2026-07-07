@@ -49,6 +49,7 @@ export const authConfig = {
         token.id = user.id as string;
         token.role = user.role;
         token.department = user.department;
+        token.permissions = user.permissions;
       }
       return token;
     },
@@ -57,6 +58,7 @@ export const authConfig = {
         session.user.id = token.id as string;
         session.user.role = token.role as Role;
         session.user.department = token.department as Department;
+        session.user.permissions = (token.permissions as string[]) ?? [];
       }
       return session;
     },

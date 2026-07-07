@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { requireModule } from "@/lib/auth-guard";
 import { getDriverById, getEntityDocuments } from "@/app/actions/safety";
 import { DriverProfileView } from "@/components/safety/DriverProfileView";
 
@@ -7,6 +8,7 @@ export default async function DriverProfilePage({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  await requireModule("safety.drivers");
   const { id } = await params;
   const driver = await getDriverById(id);
   if (!driver) notFound();
