@@ -1,14 +1,50 @@
 "use client";
 
-import { useState } from "react";
-import { createInsurance } from "@/app/actions/safety";
+import { showError } from "@/components/ui/toast";
+import { useState, useRef } from "react";
+import { createInsurance, setInsuranceStatus } from "@/app/actions/safety";
+import { createDocument } from "@/app/actions/documents";
 import { Plus } from "lucide-react";
-import type { InsuranceWithRefs, Driver, Truck } from "@/types/models";
+import type { InsuranceWithRefs, Driver, Truck, Document } from "@/types/models";
+import type { InsuranceStatus } from "@prisma/client";
+import { Modal, Field, ModalActions } from "@/components/ui/profile";
 
-export function InsuranceClient({ initialInsurance, drivers, trucks }: { initialInsurance: InsuranceWithRefs[], drivers: Driver[], trucks: Truck[] }) {
+const STATUS_STYLES: Record<string, string> = {
+  ACTIVE: "bg-green-50 text-green-700",
+  EXPIRED: "bg-red-50 text-red-700",
+  MISSING: "bg-red-50 text-red-700",
+  REJECTED: "bg-red-100 text-red-800",
+  REMOVED: "bg-surface-2 text-muted",
+};
+
+export function InsuranceClient({ initialInsurance, drivers, trucks, initialCoiDocs }: { initialInsurance: InsuranceWithRefs[], drivers: Driver[], trucks: Truck[], initialCoiDocs: Document[] }) {
   const [insurances, setInsurances] = useState(initialInsurance);
+  const [coiDocs, setCoiDocs] = useState(initialCoiDocs);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [coiTarget, setCoiTarget] = useState<InsuranceWithRefs | null>(null);
   const [loading, setLoading] = useState(false);
+  const coiFormRef = useRef<HTMLFormElement>(null);
+
+  const coiFor = (insId: string) => coiDocs.find((d) => d.entityId === insId);
+
+  const handleCoiUpload = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!coiTarget) return;
+    setLoading(true);
+    try {
+      const formData = new FormData(coiFormRef.current!);
+      formData.set("entityType", "INSURANCE");
+      formData.set("entityId", coiTarget.id);
+      formData.set("type", "COI");
+      const newDoc = await createDocument(formData);
+      setCoiDocs((prev) => [newDoc, ...prev]);
+      setCoiTarget(null);
+    } catch (error) {
+      showError(error instanceof Error ? error.message : "Yuklashda xatolik.");
+    } finally {
+      setLoading(false);
+    }
+  };
   
   const [formData, setFormData] = useState({
     type: "OCC_ACC",
@@ -16,6 +52,23 @@ export function InsuranceClient({ initialInsurance, drivers, trucks }: { initial
     truckId: "",
     endDate: new Date().toISOString().split('T')[0],
   });
+
+  const changeStatus = async (ins: InsuranceWithRefs, status: InsuranceStatus) => {
+    let rejectionNotes: string | undefined;
+    if (status === "REJECTED") {
+      const answer = prompt("Rad etish sababi (majburiy):");
+      if (!answer?.trim()) return;
+      rejectionNotes = answer.trim();
+    } else if (!confirm(`Change policy status to ${status}?`)) {
+      return;
+    }
+    try {
+      const updated = await setInsuranceStatus(ins.id, status, rejectionNotes);
+      setInsurances((prev) => prev.map((x) => (x.id === updated.id ? updated : x)));
+    } catch (error) {
+      showError(error instanceof Error ? error.message : "Amaliyot bajarilmadi.");
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,7 +84,7 @@ export function InsuranceClient({ initialInsurance, drivers, trucks }: { initial
         endDate: new Date().toISOString().split('T')[0],
       });
     } catch (error) {
-      alert(error instanceof Error ? error.message : "Sug'urta qo'shishda xatolik.");
+      showError(error instanceof Error ? error.message : "Sug'urta qo'shishda xatolik.");
     } finally {
       setLoading(false);
     }
@@ -58,19 +111,22 @@ export function InsuranceClient({ initialInsurance, drivers, trucks }: { initial
                 <th className="px-6 py-4 font-medium">Type</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-muted uppercase tracking-wider">Target</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-muted uppercase tracking-wider">Expiry Date</th>
+                <th className="px-6 py-4 font-medium">COI</th>
                 <th className="px-6 py-4 font-medium">Status</th>
+                <th className="px-6 py-4 font-medium">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
               {insurances.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="px-6 py-8 text-center text-muted">
+                  <td colSpan={6} className="px-6 py-8 text-center text-muted">
                     No insurance policies found.
                   </td>
                 </tr>
               ) : (
                 insurances.map((ins) => {
-                  const isExpired = ins.expiryDate ? new Date(ins.expiryDate) < new Date() : false;
+                  const isExpired = ins.status === "ACTIVE" && ins.expiryDate ? new Date(ins.expiryDate) < new Date() : false;
+                  const shownStatus = isExpired ? "EXPIRED" : ins.status;
                   return (
                     <tr key={ins.id} className="hover:bg-surface-2 transition-colors">
                       <td className="px-6 py-4 font-medium text-fg">{ins.type}</td>
@@ -81,11 +137,31 @@ export function InsuranceClient({ initialInsurance, drivers, trucks }: { initial
                       </td>
                       <td className="px-6 py-4">{ins.expiryDate ? new Date(ins.expiryDate).toLocaleDateString() : 'N/A'}</td>
                       <td className="px-6 py-4">
-                        <span className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${
-                          ins.status === 'ACTIVE' && !isExpired ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
-                        }`}>
-                          {isExpired ? 'EXPIRED' : ins.status}
+                        {coiFor(ins.id) ? (
+                          <a href={coiFor(ins.id)!.fileUrl} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline text-sm font-medium">View COI</a>
+                        ) : (
+                          <button onClick={() => setCoiTarget(ins)} className="text-sm font-medium text-muted hover:text-blue-600 hover:underline">Upload COI</button>
+                        )}
+                      </td>
+                      <td className="px-6 py-4">
+                        <span
+                          className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${STATUS_STYLES[shownStatus] ?? 'bg-surface-2 text-muted'}`}
+                          title={ins.status === 'REJECTED' && ins.rejectionNotes ? ins.rejectionNotes : undefined}
+                        >
+                          {shownStatus}
                         </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex gap-3 text-sm font-medium">
+                          {ins.status === 'ACTIVE' ? (
+                            <>
+                              <button onClick={() => changeStatus(ins, 'REMOVED')} className="text-yellow-600 hover:underline">Remove</button>
+                              <button onClick={() => changeStatus(ins, 'REJECTED')} className="text-red-600 hover:underline">Reject</button>
+                            </>
+                          ) : (
+                            <button onClick={() => changeStatus(ins, 'ACTIVE')} className="text-green-600 hover:underline">Reactivate</button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   )
@@ -95,6 +171,25 @@ export function InsuranceClient({ initialInsurance, drivers, trucks }: { initial
           </table>
         </div>
       </div>
+
+      {coiTarget && (
+        <Modal title="Upload COI File" onClose={() => setCoiTarget(null)}>
+          <form ref={coiFormRef} onSubmit={handleCoiUpload} className="space-y-4">
+            <p className="text-sm text-muted">
+              {coiTarget.type} — {coiTarget.type === "OCC_ACC"
+                ? `${coiTarget.driver?.firstName ?? ""} ${coiTarget.driver?.lastName ?? ""}`
+                : coiTarget.truck?.unitNumber ?? ""}
+            </p>
+            <Field label="COI File (PDF/PNG/JPG, max 10MB)">
+              <input name="file" type="file" required className="block w-full text-sm text-muted file:mr-3 file:rounded-lg file:border-0 file:bg-blue-50 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-blue-700 hover:file:bg-blue-100" />
+            </Field>
+            <Field label="Expiry Date (optional)">
+              <input name="expiryDate" type="date" className="modal-input" />
+            </Field>
+            <ModalActions loading={loading} onCancel={() => setCoiTarget(null)} submitLabel="Upload" />
+          </form>
+        </Modal>
+      )}
 
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">

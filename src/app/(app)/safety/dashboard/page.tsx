@@ -1,11 +1,11 @@
 import { getDashboardStats } from "@/app/actions/admin";
 import { generateNotifications, getNotifications } from "@/app/actions/notifications";
 import { NotificationsPanel } from "@/components/NotificationsPanel";
-import { Users, ShieldAlert, AlertTriangle, ClipboardCheck, CreditCard, HeartPulse } from "lucide-react";
+import { Users, ShieldAlert, AlertTriangle, ClipboardCheck, CreditCard, HeartPulse, FlaskConical, CalendarCheck, UserX, FileWarning } from "lucide-react";
 
 export default async function SafetyDashboard() {
   await generateNotifications();
-  const [stats, notifications] = await Promise.all([getDashboardStats(), getNotifications()]);
+  const [stats, notifications] = await Promise.all([getDashboardStats(), getNotifications("SAFETY")]);
 
   const cards = [
     { label: "Active Drivers", value: stats.driversActive, sub: `${stats.driversTerminated} terminated`, icon: Users, color: "bg-green-100 text-green-600" },
@@ -14,6 +14,10 @@ export default async function SafetyDashboard() {
     { label: "Open Accidents", value: stats.openAccidents, sub: "Pending", icon: AlertTriangle, color: "bg-red-100 text-red-600" },
     { label: "Open Claims", value: stats.openClaims, sub: "Pending", icon: ShieldAlert, color: "bg-red-100 text-red-600" },
     { label: "Pending Inspections", value: stats.pendingInspections, sub: "Awaiting review", icon: ClipboardCheck, color: "bg-yellow-100 text-yellow-600" },
+    { label: "Post-Accident Tests", value: stats.pendingPostAccidentTests, sub: "Pending completion", icon: FlaskConical, color: "bg-red-100 text-red-600" },
+    { label: "Inspections This Month", value: stats.inspectionsThisMonth, sub: "Since start of month", icon: CalendarCheck, color: "bg-blue-100 text-blue-600" },
+    { label: "OCC/ACC Rejected", value: stats.occAccRejected, sub: "Rejected drivers", icon: UserX, color: "bg-red-100 text-red-600" },
+    { label: "Expired Documents", value: stats.expiredDocs, sub: "Past expiry date", icon: FileWarning, color: "bg-orange-100 text-orange-600" },
   ];
 
   return (

@@ -41,6 +41,10 @@ export async function getDashboardStats() {
     openAlerts,
     monthlyServiceAgg,
     monthlyExpenseAgg,
+    pendingPostAccidentTests,
+    inspectionsThisMonth,
+    occAccRejected,
+    expiredDocs,
   ] = await Promise.all([
     prisma.truck.count(),
     prisma.truck.count({ where: { status: "ASSIGNED" } }),
@@ -60,6 +64,10 @@ export async function getDashboardStats() {
     prisma.notification.count({ where: { status: "OPEN" } }),
     prisma.service.aggregate({ _sum: { cost: true }, where: { serviceDate: { gte: startOfMonth } } }),
     prisma.expense.aggregate({ _sum: { amount: true }, where: { date: { gte: startOfMonth } } }),
+    prisma.accident.count({ where: { status: "PENDING", postAccidentTestDone: false } }),
+    prisma.inspection.count({ where: { date: { gte: startOfMonth } } }),
+    prisma.insurance.count({ where: { type: "OCC_ACC", status: "REJECTED" } }),
+    prisma.document.count({ where: { expiryDate: { lt: new Date() } } }),
   ]);
 
   return {
@@ -83,6 +91,10 @@ export async function getDashboardStats() {
     openAccidents,
     openClaims,
     pendingInspections,
+    pendingPostAccidentTests,
+    inspectionsThisMonth,
+    occAccRejected,
+    expiredDocs,
     // Orqaga moslik (eski dashboard maydonlari)
     driversCount: driversActive,
     openClaimsCount: openClaims,

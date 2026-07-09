@@ -1,6 +1,8 @@
 "use client";
 
+import { showError } from "@/components/ui/toast";
 import { useState } from "react";
+import Link from "next/link";
 import { createCargoClaim } from "@/app/actions/safety";
 import { Plus } from "lucide-react";
 import type { CargoClaimWithRefs, Driver, Truck } from "@/types/models";
@@ -10,7 +12,7 @@ export function CargoClaimsClient({ initialClaims, drivers, trucks }: { initialC
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   
-  const [formData, setFormData] = useState({
+  const emptyForm = () => ({
     claimNumber: "",
     date: new Date().toISOString().split('T')[0],
     driverId: (drivers && drivers.length > 0) ? drivers[0].id : "",
@@ -18,8 +20,10 @@ export function CargoClaimsClient({ initialClaims, drivers, trucks }: { initialC
     location: "",
     loadNumber: "",
     broker: "",
+    adjuster: "",
     notes: "",
   });
+  const [formData, setFormData] = useState(emptyForm());
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,18 +32,9 @@ export function CargoClaimsClient({ initialClaims, drivers, trucks }: { initialC
       const newClaim = await createCargoClaim(formData);
       setClaims([newClaim, ...claims]);
       setIsModalOpen(false);
-      setFormData({
-        claimNumber: "",
-        date: new Date().toISOString().split('T')[0],
-        driverId: (drivers && drivers.length > 0) ? drivers[0].id : "",
-        truckId: "",
-        location: "",
-        loadNumber: "",
-        broker: "",
-        notes: "",
-      });
+      setFormData(emptyForm());
     } catch (error) {
-      alert(error instanceof Error ? error.message : "Da'voni saqlashda xatolik.");
+      showError(error instanceof Error ? error.message : "Da'voni saqlashda xatolik.");
     } finally {
       setLoading(false);
     }
@@ -80,7 +75,11 @@ export function CargoClaimsClient({ initialClaims, drivers, trucks }: { initialC
               ) : (
                 claims.map((claim) => (
                   <tr key={claim.id} className="hover:bg-surface-2 transition-colors">
-                    <td className="px-6 py-4 font-medium text-fg">{claim.claimNumber}</td>
+                    <td className="px-6 py-4 font-medium">
+                      <Link href={`/safety/cargo-claims/${claim.id}`} className="text-blue-600 hover:underline">
+                        {claim.claimNumber || `#${claim.loadNumber}`}
+                      </Link>
+                    </td>
                     <td className="px-6 py-4">{claim.driver?.firstName} {claim.driver?.lastName}</td>
                     <td className="px-6 py-4">{claim.loadNumber}</td>
                     <td className="px-6 py-4 max-w-xs truncate">{claim.notes}</td>
@@ -138,8 +137,13 @@ export function CargoClaimsClient({ initialClaims, drivers, trucks }: { initialC
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-fg">Broker</label>
-                  <input required type="text" className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-blue-500 focus:outline-none" 
+                  <input required type="text" className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
                     value={formData.broker} onChange={(e) => setFormData({...formData, broker: e.target.value})} />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-fg">Adjuster (Optional)</label>
+                  <input type="text" className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                    value={formData.adjuster} onChange={(e) => setFormData({...formData, adjuster: e.target.value})} />
                 </div>
               </div>
               <div>

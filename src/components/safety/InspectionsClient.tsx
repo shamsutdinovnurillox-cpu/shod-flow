@@ -1,6 +1,8 @@
 "use client";
 
+import { showError } from "@/components/ui/toast";
 import { useState } from "react";
+import Link from "next/link";
 import { createInspection } from "@/app/actions/safety";
 import { Plus } from "lucide-react";
 import type { InspectionWithRefs, Driver, Truck, Trailer } from "@/types/models";
@@ -42,7 +44,7 @@ export function InspectionsClient({ initialInspections, drivers, trucks }: { ini
         notes: "",
       });
     } catch (error) {
-      alert(error instanceof Error ? error.message : "Inspeksiyani saqlashda xatolik.");
+      showError(error instanceof Error ? error.message : "Inspeksiyani saqlashda xatolik.");
     } finally {
       setLoading(false);
     }
@@ -84,7 +86,11 @@ export function InspectionsClient({ initialInspections, drivers, trucks }: { ini
               ) : (
                 inspections.map((insp) => (
                   <tr key={insp.id} className="hover:bg-surface-2 transition-colors">
-                    <td className="px-6 py-4 font-medium text-fg">{new Date(insp.date).toLocaleDateString()}</td>
+                    <td className="px-6 py-4 font-medium">
+                      <Link href={`/safety/inspections/${insp.id}`} className="text-blue-600 hover:underline">
+                        {new Date(insp.date).toLocaleDateString()}
+                      </Link>
+                    </td>
                     <td className="px-6 py-4">{insp.driver ? `${insp.driver.firstName} ${insp.driver.lastName}` : "Unknown"}</td>
                     <td className="px-6 py-4">
                       {insp.truck?.unitNumber}
@@ -149,6 +155,7 @@ export function InspectionsClient({ initialInspections, drivers, trucks }: { ini
                     <option value="CLEAN">Clean</option>
                     <option value="VIOLATION">Violation(s)</option>
                     <option value="PENDING_REVIEW">Pending Review</option>
+                    <option value="CLOSED">Closed</option>
                   </select>
                 </div>
                 <div className="col-span-2">
