@@ -26,12 +26,14 @@ export const MODULES: ModuleDef[] = [
   { key: "fleet.services", label: "Services", dept: "FLEET", href: "/fleet/services" },
   { key: "fleet.expenses", label: "Expenses", dept: "FLEET", href: "/fleet/expenses" },
   { key: "fleet.documents", label: "Documents", dept: "FLEET", href: "/fleet/documents" },
+  { key: "fleet.notifications", label: "Notifications", dept: "FLEET", href: "/fleet/notifications" },
   { key: "safety.drivers", label: "Drivers", dept: "SAFETY", href: "/safety/drivers" },
   { key: "safety.insurance", label: "Insurance", dept: "SAFETY", href: "/safety/insurance" },
   { key: "safety.accidents", label: "Accidents", dept: "SAFETY", href: "/safety/accidents" },
   { key: "safety.claims", label: "Cargo Claims", dept: "SAFETY", href: "/safety/cargo-claims" },
   { key: "safety.inspections", label: "Inspections", dept: "SAFETY", href: "/safety/inspections" },
   { key: "safety.documents", label: "Safety Documents", dept: "SAFETY", href: "/safety/documents" },
+  { key: "safety.notifications", label: "Notifications", dept: "SAFETY", href: "/safety/notifications" },
 ];
 
 export const FLEET_MODULES = MODULES.filter((m) => m.dept === "FLEET");

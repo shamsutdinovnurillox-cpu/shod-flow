@@ -9,7 +9,7 @@ function money(n: number) {
 
 export default async function FleetDashboard() {
   await generateNotifications();
-  const [stats, notifications] = await Promise.all([getDashboardStats(), getNotifications()]);
+  const [stats, notifications] = await Promise.all([getDashboardStats(), getNotifications("FLEET")]);
 
   const cards = [
     {

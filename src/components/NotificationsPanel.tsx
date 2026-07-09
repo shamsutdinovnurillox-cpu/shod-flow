@@ -1,10 +1,28 @@
 "use client";
 
+import { showError } from "@/components/ui/toast";
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { updateNotificationStatus } from "@/app/actions/notifications";
 import type { Notification } from "@prisma/client";
 import { Bell, Check, Clock } from "lucide-react";
+
+/** Bog'liq yozuvga to'g'ridan-to'g'ri havola (PRD 4.8, 5.7). */
+function notificationHref(n: Notification): string | null {
+  switch (n.entityType) {
+    case "TRUCK": return `/fleet/trucks/${n.entityId}`;
+    case "TRAILER": return `/fleet/trailers/${n.entityId}`;
+    case "DRIVER": return `/safety/drivers/${n.entityId}`;
+    case "ACCIDENT": return `/safety/accidents/${n.entityId}`;
+    case "CLAIM": return `/safety/cargo-claims/${n.entityId}`;
+    case "INSPECTION": return `/safety/inspections/${n.entityId}`;
+    case "INSURANCE": return `/safety/insurance`;
+    case "SERVICE": return `/fleet/services`;
+    case "EXPENSE": return `/fleet/expenses`;
+    default: return null;
+  }
+}
 
 const PRIORITY_STYLES: Record<string, string> = {
   CRITICAL: "bg-red-50 text-red-700 border-red-200",
@@ -23,7 +41,7 @@ export function NotificationsPanel({ notifications }: { notifications: Notificat
       await updateNotificationStatus(id, status);
       router.refresh();
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Amaliyot bajarilmadi.");
+      showError(err instanceof Error ? err.message : "Amaliyot bajarilmadi.");
     } finally {
       setBusy(null);
     }
@@ -48,7 +66,11 @@ export function NotificationsPanel({ notifications }: { notifications: Notificat
                   <span className="rounded-full bg-surface/70 px-2 py-0.5 text-xs font-bold">{n.priority}</span>
                   {n.status === "SNOOZED" && <span className="text-xs italic">snoozed</span>}
                 </div>
-                <p className="mt-1 text-sm font-medium">{n.message}</p>
+                {notificationHref(n) ? (
+                  <Link href={notificationHref(n)!} className="mt-1 block text-sm font-medium hover:underline">{n.message}</Link>
+                ) : (
+                  <p className="mt-1 text-sm font-medium">{n.message}</p>
+                )}
                 {n.dueDate && <p className="text-xs opacity-70 mt-0.5">Due: {new Date(n.dueDate).toLocaleDateString()}</p>}
               </div>
               <div className="flex shrink-0 gap-2">

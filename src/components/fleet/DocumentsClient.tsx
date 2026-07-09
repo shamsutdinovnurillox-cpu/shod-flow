@@ -1,15 +1,58 @@
 "use client";
 
+import { showError } from "@/components/ui/toast";
 import { useState, useRef } from "react";
-import { createDocument } from "@/app/actions/documents";
-import { Plus, FileText, Upload } from "lucide-react";
+import { createDocument, deleteDocument, replaceDocument } from "@/app/actions/documents";
+import { Plus, FileText, Upload, Trash2, RefreshCw } from "lucide-react";
 import type { Document } from "@/types/models";
 
 export function DocumentsClient({ initialDocuments }: { initialDocuments: Document[] }) {
   const [documents, setDocuments] = useState(initialDocuments);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [replacing, setReplacing] = useState<Document | null>(null);
   const [loading, setLoading] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
+  const replaceFormRef = useRef<HTMLFormElement>(null);
+
+  // Versiya zanjiri: replacesId'da ko'rsatilganlar eski versiya — gridda faqat oxirgisi.
+  const supersededIds = new Set(documents.map((d) => d.replacesId).filter(Boolean) as string[]);
+  const latestDocs = documents.filter((d) => !supersededIds.has(d.id));
+  const byId = new Map(documents.map((d) => [d.id, d]));
+  const versionHistory = (doc: Document): Document[] => {
+    const chain: Document[] = [];
+    let cur = doc.replacesId ? byId.get(doc.replacesId) : undefined;
+    while (cur) {
+      chain.push(cur);
+      cur = cur.replacesId ? byId.get(cur.replacesId) : undefined;
+    }
+    return chain;
+  };
+
+  const handleReplace = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!replacing) return;
+    setLoading(true);
+    try {
+      const formData = new FormData(replaceFormRef.current!);
+      const newDoc = await replaceDocument(replacing.id, formData);
+      setDocuments((prev) => [newDoc, ...prev]);
+      setReplacing(null);
+    } catch (error) {
+      showError(error instanceof Error ? error.message : "Almashtirishda xatolik.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDelete = async (doc: Document) => {
+    if (!confirm(`Delete "${doc.fileName ?? doc.type}"? This also removes the stored file.`)) return;
+    try {
+      await deleteDocument(doc.id);
+      setDocuments((prev) => prev.filter((d) => d.id !== doc.id));
+    } catch (error) {
+      showError(error instanceof Error ? error.message : "Amaliyot bajarilmadi.");
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -21,7 +64,7 @@ export function DocumentsClient({ initialDocuments }: { initialDocuments: Docume
       setIsModalOpen(false);
     } catch (error) {
       console.error(error);
-      alert(error instanceof Error ? error.message : "Amaliyot bajarilmadi.");
+      showError(error instanceof Error ? error.message : "Amaliyot bajarilmadi.");
     } finally {
       setLoading(false);
     }
@@ -41,12 +84,12 @@ export function DocumentsClient({ initialDocuments }: { initialDocuments: Docume
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {documents.length === 0 ? (
+        {latestDocs.length === 0 ? (
           <div className="col-span-full py-12 text-center text-muted bg-surface rounded-xl border border-border">
             No documents found.
           </div>
         ) : (
-          documents.map((doc) => (
+          latestDocs.map((doc) => (
             <div key={doc.id} className="flex flex-col bg-surface rounded-xl border border-border shadow-sm p-5 hover:shadow-md transition-shadow">
               <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center gap-3">
@@ -56,7 +99,16 @@ export function DocumentsClient({ initialDocuments }: { initialDocuments: Docume
                   <div>
                     <h3 className="font-semibold text-fg">{doc.type}</h3>
                     <p className="text-xs text-muted">For {doc.entityType}: {doc.entityId}</p>
+                    {doc.fileName && <p className="text-xs text-faint truncate max-w-[180px]">{doc.fileName}</p>}
                   </div>
+                </div>
+                <div className="flex gap-1">
+                  <button onClick={() => setReplacing(doc)} aria-label="Replace document" title="Replace with new version" className="p-1.5 rounded-lg text-muted hover:text-blue-600 hover:bg-blue-50">
+                    <RefreshCw className="h-4 w-4" />
+                  </button>
+                  <button onClick={() => handleDelete(doc)} aria-label="Delete document" className="p-1.5 rounded-lg text-muted hover:text-red-600 hover:bg-red-50">
+                    <Trash2 className="h-4 w-4" />
+                  </button>
                 </div>
               </div>
               <div className="mt-auto space-y-2 text-sm text-muted">
@@ -72,12 +124,60 @@ export function DocumentsClient({ initialDocuments }: { initialDocuments: Docume
                   <a href={doc.fileUrl} target="_blank" rel="noreferrer" className="text-blue-600 hover:text-blue-700 font-medium text-sm">
                     View File &rarr;
                   </a>
+                  {versionHistory(doc).length > 0 && (
+                    <details className="mt-2">
+                      <summary className="text-xs text-muted cursor-pointer hover:text-fg">
+                        {versionHistory(doc).length} older version{versionHistory(doc).length > 1 ? "s" : ""}
+                      </summary>
+                      <ul className="mt-1 space-y-1">
+                        {versionHistory(doc).map((v) => (
+                          <li key={v.id} className="flex justify-between text-xs">
+                            <a href={v.fileUrl} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline truncate">
+                              {v.fileName ?? v.type}
+                            </a>
+                            <span className="text-faint shrink-0 ml-2">{new Date(v.createdAt).toLocaleDateString()}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </details>
+                  )}
                 </div>
               </div>
             </div>
           ))
         )}
       </div>
+
+      {replacing && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <div className="w-full max-w-md rounded-2xl bg-surface p-6 shadow-2xl">
+            <h2 className="text-xl font-bold text-fg mb-1">Replace Document</h2>
+            <p className="text-sm text-muted mb-4">{replacing.type} — {replacing.fileName ?? replacing.entityId}. Eski versiya tarixda saqlanadi.</p>
+            <form ref={replaceFormRef} onSubmit={handleReplace} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-fg">New File</label>
+                <input name="file" type="file" required className="mt-1 block w-full text-sm text-muted file:mr-3 file:rounded-lg file:border-0 file:bg-blue-50 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-blue-700 hover:file:bg-blue-100" />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-fg">Issue Date</label>
+                  <input type="date" name="issueDate" className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-blue-500 focus:outline-none" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-fg">Expiry Date</label>
+                  <input type="date" name="expiryDate" className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-blue-500 focus:outline-none" />
+                </div>
+              </div>
+              <div className="mt-6 flex justify-end gap-3">
+                <button type="button" onClick={() => setReplacing(null)} className="rounded-lg px-4 py-2 text-sm font-medium text-fg hover:bg-surface-2">Cancel</button>
+                <button type="submit" disabled={loading} className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50">
+                  {loading ? "Uploading..." : "Replace"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
