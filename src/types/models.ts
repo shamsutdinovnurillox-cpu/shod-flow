@@ -13,6 +13,7 @@ export type AccidentWithRefs = Prisma.AccidentGetPayload<{ include: { driver: tr
 export type CargoClaimWithRefs = Prisma.CargoClaimGetPayload<{ include: { driver: true; truck: true } }>;
 export type InspectionWithRefs = Prisma.InspectionGetPayload<{ include: { driver: true; truck: true } }>;
 export type AuditLogWithUser = Prisma.AuditLogGetPayload<{ include: { user: true } }>;
+export type AssignmentWithRefs = Prisma.AssignmentGetPayload<{ include: { driver: true; truck: true } }>;
 export type { AuditLog };
 
 export type TruckProfile = Prisma.TruckGetPayload<{

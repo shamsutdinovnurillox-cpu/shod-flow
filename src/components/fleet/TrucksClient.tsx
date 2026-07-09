@@ -1,19 +1,21 @@
 "use client";
 
+import { showError } from "@/components/ui/toast";
 import { useState } from "react";
 import Link from "next/link";
 import { createTruck } from "@/app/actions/fleet";
 import { Plus } from "lucide-react";
-import type { Truck } from "@/types/models";
+import type { Truck, AssignmentWithRefs } from "@/types/models";
 
 const VIEWS = [
   { key: "ALL", label: "All" },
   { key: "ASSIGNED", label: "Assigned" },
   { key: "UNASSIGNED", label: "Unassigned" },
   { key: "IN_SERVICE", label: "In Service" },
+  { key: "HISTORY", label: "History" },
 ] as const;
 
-export function TrucksClient({ initialTrucks }: { initialTrucks: Truck[] }) {
+export function TrucksClient({ initialTrucks, history }: { initialTrucks: Truck[]; history: AssignmentWithRefs[] }) {
   const [trucks, setTrucks] = useState(initialTrucks);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -27,6 +29,13 @@ export function TrucksClient({ initialTrucks }: { initialTrucks: Truck[] }) {
       return [t.unitNumber, t.vin, t.licensePlate, t.make].some((f) => f.toLowerCase().includes(q));
     }
     return true;
+  });
+
+  const filteredHistory = history.filter((a) => {
+    if (!search.trim()) return true;
+    const q = search.toLowerCase();
+    const driverName = a.driver ? `${a.driver.firstName} ${a.driver.lastName}` : "";
+    return [a.truck?.unitNumber ?? "", driverName, a.location ?? "", a.reason ?? ""].some((f) => f.toLowerCase().includes(q));
   });
 
   // Form state
@@ -59,7 +68,7 @@ export function TrucksClient({ initialTrucks }: { initialTrucks: Truck[] }) {
       });
     } catch (error) {
       console.error(error);
-      alert(error instanceof Error ? error.message : "Amaliyot bajarilmadi.");
+      showError(error instanceof Error ? error.message : "Amaliyot bajarilmadi.");
     } finally {
       setLoading(false);
     }
@@ -101,7 +110,47 @@ export function TrucksClient({ initialTrucks }: { initialTrucks: Truck[] }) {
         />
       </div>
 
-      {/* Table */}
+      {/* History view (PRD 4.2): yopilgan biriktiruvlar tarixi */}
+      {view === "HISTORY" ? (
+        <div className="rounded-xl border border-border bg-surface shadow-sm overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm text-muted">
+              <thead className="bg-surface-2 text-fg">
+                <tr>
+                  <th className="px-6 py-4 font-medium">Unit #</th>
+                  <th className="px-6 py-4 font-medium">Driver</th>
+                  <th className="px-6 py-4 font-medium">Pickup</th>
+                  <th className="px-6 py-4 font-medium">Dropoff</th>
+                  <th className="px-6 py-4 font-medium">Location</th>
+                  <th className="px-6 py-4 font-medium">Reason</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {filteredHistory.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="px-6 py-8 text-center text-muted">No history records.</td>
+                  </tr>
+                ) : (
+                  filteredHistory.map((a) => (
+                    <tr key={a.id} className="hover:bg-surface-2 transition-colors">
+                      <td className="px-6 py-4 font-medium">
+                        {a.truck ? (
+                          <Link href={`/fleet/trucks/${a.truck.id}`} className="text-blue-600 hover:underline">{a.truck.unitNumber}</Link>
+                        ) : "—"}
+                      </td>
+                      <td className="px-6 py-4">{a.driver ? `${a.driver.firstName} ${a.driver.lastName}` : "—"}</td>
+                      <td className="px-6 py-4">{new Date(a.pickupDate).toLocaleDateString()}</td>
+                      <td className="px-6 py-4">{a.dropoffDate ? new Date(a.dropoffDate).toLocaleDateString() : "—"}</td>
+                      <td className="px-6 py-4">{a.location ?? "—"}</td>
+                      <td className="px-6 py-4">{a.reason ?? "—"}</td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      ) : (
       <div className="rounded-xl border border-border bg-surface shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm text-muted">
@@ -150,6 +199,7 @@ export function TrucksClient({ initialTrucks }: { initialTrucks: Truck[] }) {
           </table>
         </div>
       </div>
+      )}
 
       {/* Simple Modal */}
       {isModalOpen && (
