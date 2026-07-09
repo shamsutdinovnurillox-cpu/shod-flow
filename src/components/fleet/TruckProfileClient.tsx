@@ -1,9 +1,10 @@
 "use client";
 
+import { showError } from "@/components/ui/toast";
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { assignTruck, moveTruck } from "@/app/actions/fleet";
+import { assignTruck, moveTruck, updateTruck } from "@/app/actions/fleet";
 import type { TruckProfile, Driver } from "@/types/models";
 import { ArrowLeft, Truck, User, MapPin, Wrench, DollarSign } from "lucide-react";
 import { money, InfoCard, DetailPanel, Row, HistoryTable, Modal, Field, ModalActions } from "@/components/ui/profile";
@@ -18,7 +19,7 @@ const STATUS_STYLES: Record<string, string> = {
 
 export function TruckProfileClient({ truck, drivers }: { truck: TruckProfile; drivers: Driver[] }) {
   const router = useRouter();
-  const [modal, setModal] = useState<null | "assign" | "move">(null);
+  const [modal, setModal] = useState<null | "assign" | "move" | "edit">(null);
   const [loading, setLoading] = useState(false);
 
   const activeAssignment = truck.assignments.find((a) => a.isActive);
@@ -29,6 +30,36 @@ export function TruckProfileClient({ truck, drivers }: { truck: TruckProfile; dr
 
   const [assignForm, setAssignForm] = useState({ driverId: drivers[0]?.id ?? "", pickupDate: today() });
   const [moveForm, setMoveForm] = useState({ mode: "DROP_YARD", location: "", reason: "", notes: "" });
+  const [editForm, setEditForm] = useState({
+    unitNumber: truck.unitNumber,
+    vin: truck.vin,
+    licensePlate: truck.licensePlate,
+    make: truck.make,
+    year: String(truck.year),
+    ownershipType: truck.ownershipType,
+    location: truck.location,
+    notes: truck.notes ?? "",
+    motiveGateway: truck.motiveGateway ?? "",
+    camera: truck.camera ?? "",
+    prePass: truck.prePass ?? "",
+    eldPt30: truck.eldPt30 ?? "",
+    tablet: truck.tablet ?? "",
+    chains: truck.chains,
+  });
+
+  const onEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      await updateTruck(truck.id, editForm);
+      setModal(null);
+      router.refresh();
+    } catch (err) {
+      showError(err instanceof Error ? err.message : "Saqlashda xatolik.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const onAssign = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,7 +69,7 @@ export function TruckProfileClient({ truck, drivers }: { truck: TruckProfile; dr
       setModal(null);
       router.refresh();
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Biriktirishda xatolik.");
+      showError(err instanceof Error ? err.message : "Biriktirishda xatolik.");
     } finally {
       setLoading(false);
     }
@@ -52,7 +83,7 @@ export function TruckProfileClient({ truck, drivers }: { truck: TruckProfile; dr
       setModal(null);
       router.refresh();
     } catch (err) {
-      alert(err instanceof Error ? err.message : "O'zgartirishda xatolik.");
+      showError(err instanceof Error ? err.message : "O'zgartirishda xatolik.");
     } finally {
       setLoading(false);
     }
@@ -79,6 +110,7 @@ export function TruckProfileClient({ truck, drivers }: { truck: TruckProfile; dr
         <div className="flex gap-3">
           <button onClick={() => setModal("assign")} className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">Assign Driver</button>
           <button onClick={() => setModal("move")} className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-fg hover:bg-surface-2">Move / Drop</button>
+          <button onClick={() => setModal("edit")} className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-fg hover:bg-surface-2">Edit</button>
         </div>
       </div>
 
@@ -143,6 +175,64 @@ export function TruckProfileClient({ truck, drivers }: { truck: TruckProfile; dr
               <input required type="date" value={assignForm.pickupDate} onChange={(e) => setAssignForm({ ...assignForm, pickupDate: e.target.value })} className="modal-input" />
             </Field>
             <ModalActions loading={loading} onCancel={() => setModal(null)} submitLabel="Assign" />
+          </form>
+        </Modal>
+      )}
+
+      {/* Edit modal */}
+      {modal === "edit" && (
+        <Modal title="Edit Truck" onClose={() => setModal(null)}>
+          <form onSubmit={onEdit} className="space-y-4 max-h-[70vh] overflow-y-auto pr-1">
+            <div className="grid grid-cols-2 gap-4">
+              <Field label="Unit Number">
+                <input required value={editForm.unitNumber} onChange={(e) => setEditForm({ ...editForm, unitNumber: e.target.value })} className="modal-input" />
+              </Field>
+              <Field label="VIN">
+                <input required value={editForm.vin} onChange={(e) => setEditForm({ ...editForm, vin: e.target.value })} className="modal-input" />
+              </Field>
+              <Field label="License Plate">
+                <input required value={editForm.licensePlate} onChange={(e) => setEditForm({ ...editForm, licensePlate: e.target.value })} className="modal-input" />
+              </Field>
+              <Field label="Make">
+                <input required value={editForm.make} onChange={(e) => setEditForm({ ...editForm, make: e.target.value })} className="modal-input" />
+              </Field>
+              <Field label="Year">
+                <input required type="number" value={editForm.year} onChange={(e) => setEditForm({ ...editForm, year: e.target.value })} className="modal-input" />
+              </Field>
+              <Field label="Ownership">
+                <select value={editForm.ownershipType} onChange={(e) => setEditForm({ ...editForm, ownershipType: e.target.value as typeof editForm.ownershipType })} className="modal-input">
+                  <option value="COMPANY">Company</option>
+                  <option value="LEASED">Leased</option>
+                  <option value="OWNER_OPERATOR">Owner Operator</option>
+                </select>
+              </Field>
+              <Field label="Home Location">
+                <input required value={editForm.location} onChange={(e) => setEditForm({ ...editForm, location: e.target.value })} className="modal-input" />
+              </Field>
+              <Field label="Motive Gateway">
+                <input value={editForm.motiveGateway} onChange={(e) => setEditForm({ ...editForm, motiveGateway: e.target.value })} className="modal-input" />
+              </Field>
+              <Field label="Camera">
+                <input value={editForm.camera} onChange={(e) => setEditForm({ ...editForm, camera: e.target.value })} className="modal-input" />
+              </Field>
+              <Field label="PrePass">
+                <input value={editForm.prePass} onChange={(e) => setEditForm({ ...editForm, prePass: e.target.value })} className="modal-input" />
+              </Field>
+              <Field label="ELD PT30">
+                <input value={editForm.eldPt30} onChange={(e) => setEditForm({ ...editForm, eldPt30: e.target.value })} className="modal-input" />
+              </Field>
+              <Field label="Tablet">
+                <input value={editForm.tablet} onChange={(e) => setEditForm({ ...editForm, tablet: e.target.value })} className="modal-input" />
+              </Field>
+            </div>
+            <label className="flex items-center gap-2 text-sm text-fg">
+              <input type="checkbox" checked={editForm.chains} onChange={(e) => setEditForm({ ...editForm, chains: e.target.checked })} />
+              Chains
+            </label>
+            <Field label="Notes">
+              <textarea rows={2} value={editForm.notes} onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })} className="modal-input" />
+            </Field>
+            <ModalActions loading={loading} onCancel={() => setModal(null)} submitLabel="Save" />
           </form>
         </Modal>
       )}

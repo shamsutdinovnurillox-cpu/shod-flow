@@ -1,9 +1,10 @@
 "use client";
 
+import { showError } from "@/components/ui/toast";
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { assignTrailer, dropTrailer, setTrailerStatus } from "@/app/actions/fleet";
+import { assignTrailer, dropTrailer, setTrailerStatus, updateTrailer } from "@/app/actions/fleet";
 import type { TrailerProfile, Driver } from "@/types/models";
 import { ArrowLeft, Container, User, MapPin, Wrench, DollarSign } from "lucide-react";
 import { money, InfoCard, DetailPanel, Row, HistoryTable, Modal, Field, ModalActions } from "@/components/ui/profile";
@@ -23,7 +24,7 @@ const STATUS_STYLES: Record<string, string> = {
 
 export function TrailerProfileClient({ trailer, drivers }: { trailer: TrailerProfile; drivers: Driver[] }) {
   const router = useRouter();
-  const [modal, setModal] = useState<null | "assign" | "drop" | "status">(null);
+  const [modal, setModal] = useState<null | "assign" | "drop" | "status" | "edit">(null);
   const [loading, setLoading] = useState(false);
 
   const activeAssignment = trailer.assignments.find((a) => a.isActive);
@@ -34,6 +35,19 @@ export function TrailerProfileClient({ trailer, drivers }: { trailer: TrailerPro
   const [assignForm, setAssignForm] = useState({ driverId: drivers[0]?.id ?? "", pickupDate: today() });
   const [dropForm, setDropForm] = useState({ location: "", reason: "", notes: "" });
   const [statusVal, setStatusVal] = useState(trailer.status);
+  const toDateInput = (d: Date | string) => new Date(d).toISOString().split("T")[0];
+  const [editForm, setEditForm] = useState({
+    trailerNumber: trailer.trailerNumber,
+    vin: trailer.vin,
+    year: String(trailer.year),
+    make: trailer.make,
+    licensePlate: trailer.licensePlate,
+    state: trailer.state,
+    location: trailer.location,
+    pickupDate: toDateInput(trailer.pickupDate),
+    annualInspectionDate: toDateInput(trailer.annualInspectionDate),
+    notes: trailer.notes ?? "",
+  });
 
   const run = async (fn: () => Promise<void>, fallback: string) => {
     setLoading(true);
@@ -42,7 +56,7 @@ export function TrailerProfileClient({ trailer, drivers }: { trailer: TrailerPro
       setModal(null);
       router.refresh();
     } catch (err) {
-      alert(err instanceof Error ? err.message : fallback);
+      showError(err instanceof Error ? err.message : fallback);
     } finally {
       setLoading(false);
     }
@@ -69,6 +83,7 @@ export function TrailerProfileClient({ trailer, drivers }: { trailer: TrailerPro
           <button onClick={() => setModal("assign")} className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">Assign Driver</button>
           <button onClick={() => setModal("status")} className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-fg hover:bg-surface-2">Set Status</button>
           <button onClick={() => setModal("drop")} className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-fg hover:bg-surface-2">Drop</button>
+          <button onClick={() => setModal("edit")} className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-fg hover:bg-surface-2">Edit</button>
         </div>
       </div>
 
@@ -119,6 +134,46 @@ export function TrailerProfileClient({ trailer, drivers }: { trailer: TrailerPro
         head={["Date", "Category", "Vendor", "Status", "Amount"]}
         rows={trailer.expenses.map((x) => [new Date(x.date).toLocaleDateString(), x.category, x.vendor, x.paymentStatus, money(x.amount)])}
       />
+
+      {modal === "edit" && (
+        <Modal title="Edit Trailer" onClose={() => setModal(null)}>
+          <form onSubmit={(e) => { e.preventDefault(); run(async () => { await updateTrailer(trailer.id, editForm); }, "Saqlashda xatolik."); }} className="space-y-4 max-h-[70vh] overflow-y-auto pr-1">
+            <div className="grid grid-cols-2 gap-4">
+              <Field label="Trailer Number">
+                <input required value={editForm.trailerNumber} onChange={(e) => setEditForm({ ...editForm, trailerNumber: e.target.value })} className="modal-input" />
+              </Field>
+              <Field label="VIN">
+                <input required value={editForm.vin} onChange={(e) => setEditForm({ ...editForm, vin: e.target.value })} className="modal-input" />
+              </Field>
+              <Field label="Year">
+                <input required type="number" value={editForm.year} onChange={(e) => setEditForm({ ...editForm, year: e.target.value })} className="modal-input" />
+              </Field>
+              <Field label="Make">
+                <input required value={editForm.make} onChange={(e) => setEditForm({ ...editForm, make: e.target.value })} className="modal-input" />
+              </Field>
+              <Field label="License Plate">
+                <input required value={editForm.licensePlate} onChange={(e) => setEditForm({ ...editForm, licensePlate: e.target.value })} className="modal-input" />
+              </Field>
+              <Field label="State">
+                <input required value={editForm.state} onChange={(e) => setEditForm({ ...editForm, state: e.target.value })} className="modal-input" />
+              </Field>
+              <Field label="Home Location">
+                <input required value={editForm.location} onChange={(e) => setEditForm({ ...editForm, location: e.target.value })} className="modal-input" />
+              </Field>
+              <Field label="Pickup Date">
+                <input required type="date" value={editForm.pickupDate} onChange={(e) => setEditForm({ ...editForm, pickupDate: e.target.value })} className="modal-input" />
+              </Field>
+              <Field label="Annual Inspection">
+                <input required type="date" value={editForm.annualInspectionDate} onChange={(e) => setEditForm({ ...editForm, annualInspectionDate: e.target.value })} className="modal-input" />
+              </Field>
+            </div>
+            <Field label="Notes">
+              <textarea rows={2} value={editForm.notes} onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })} className="modal-input" />
+            </Field>
+            <ModalActions loading={loading} onCancel={() => setModal(null)} submitLabel="Save" />
+          </form>
+        </Modal>
+      )}
 
       {modal === "assign" && (
         <Modal title="Assign Driver" onClose={() => setModal(null)}>

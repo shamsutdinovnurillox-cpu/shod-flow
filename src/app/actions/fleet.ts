@@ -2,9 +2,26 @@
 
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
-import { requireUser, requirePermission } from "@/lib/auth-guard";
+import { requireUser, requirePermission, requireAdmin } from "@/lib/auth-guard";
 import { toUserMessage, requireField, ValidationError } from "@/lib/errors";
+import { changedFields, writeAudit } from "@/lib/audit";
+import { Prisma } from "@prisma/client";
 import type { OwnershipType, TrailerStatus } from "@prisma/client";
+
+/** Bo'sh string → null, aks holda trim. Ixtiyoriy matn maydonlari uchun. */
+function optText(v: string | undefined): string | null | undefined {
+  if (v === undefined) return undefined;
+  const t = v.trim();
+  return t === "" ? null : t;
+}
+
+/** Delete'da FK cheklovi xatosini tushunarli matnga aylantiradi. */
+function deleteErrorMessage(e: unknown, what: string): string {
+  if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2003") {
+    return `${what} bog'liq yozuvlari (tarix, xizmat, xarajat va h.k.) borligi uchun o'chirilmaydi. PRD bo'yicha tarix saqlanishi kerak.`;
+  }
+  return toUserMessage(e);
+}
 
 // ============================================================================
 // FLEET actions. O'qish (trucks/trailers) — SHARED master data, har qanday
@@ -62,6 +79,83 @@ export async function createTruck(data: TruckInput) {
     return truck;
   } catch (e) {
     throw new Error(toUserMessage(e));
+  }
+}
+
+export interface TruckUpdateInput {
+  unitNumber?: string;
+  vin?: string;
+  licensePlate?: string;
+  make?: string;
+  year?: string | number;
+  ownershipType?: string;
+  location?: string;
+  notes?: string;
+  motiveGateway?: string;
+  camera?: string;
+  prePass?: string;
+  eldPt30?: string;
+  tablet?: string;
+  chains?: boolean;
+}
+
+export async function updateTruck(id: string, data: TruckUpdateInput) {
+  const user = await requirePermission("fleet.trucks");
+  try {
+    const existing = await prisma.truck.findUnique({ where: { id } });
+    if (!existing) throw new ValidationError("Truck topilmadi.");
+
+    let year: number | undefined;
+    if (data.year !== undefined && data.year !== "") {
+      year = Number(data.year);
+      if (!Number.isInteger(year) || year < 1900 || year > 2100) {
+        throw new ValidationError("Yil noto'g'ri (1900–2100).");
+      }
+    }
+
+    const patch = {
+      unitNumber: data.unitNumber?.trim() || undefined,
+      vin: data.vin?.trim() || undefined,
+      licensePlate: data.licensePlate?.trim() || undefined,
+      make: data.make?.trim() || undefined,
+      year,
+      ownershipType: data.ownershipType ? (data.ownershipType as OwnershipType) : undefined,
+      location: data.location?.trim() || undefined,
+      notes: optText(data.notes),
+      motiveGateway: optText(data.motiveGateway),
+      camera: optText(data.camera),
+      prePass: optText(data.prePass),
+      eldPt30: optText(data.eldPt30),
+      tablet: optText(data.tablet),
+      chains: data.chains,
+    };
+
+    const details = changedFields(existing, patch);
+    const truck = await prisma.truck.update({ where: { id }, data: patch });
+    await writeAudit(prisma, { userId: user.id, action: "UPDATE", entityType: "Truck", entityId: id, details });
+
+    revalidatePath("/fleet/trucks");
+    revalidatePath(`/fleet/trucks/${id}`);
+    return truck;
+  } catch (e) {
+    throw new Error(toUserMessage(e));
+  }
+}
+
+/** Admin-only: truck'ni o'chirish. Bog'liq tarixi bor bo'lsa rad etiladi (PRD: history saqlansin). */
+export async function deleteTruck(id: string) {
+  const user = await requireAdmin();
+  try {
+    const existing = await prisma.truck.findUnique({ where: { id } });
+    if (!existing) throw new ValidationError("Truck topilmadi.");
+    await prisma.truck.delete({ where: { id } });
+    await writeAudit(prisma, {
+      userId: user.id, action: "DELETE", entityType: "Truck", entityId: id,
+      details: { unitNumber: existing.unitNumber, vin: existing.vin },
+    });
+    revalidatePath("/fleet/trucks");
+  } catch (e) {
+    throw new Error(deleteErrorMessage(e, "Truck"));
   }
 }
 
@@ -123,6 +217,86 @@ export async function createTrailer(data: TrailerInput) {
   }
 }
 
+export interface TrailerUpdateInput {
+  trailerNumber?: string;
+  vin?: string;
+  year?: string | number;
+  make?: string;
+  licensePlate?: string;
+  state?: string;
+  location?: string;
+  pickupDate?: string;
+  annualInspectionDate?: string;
+  notes?: string;
+}
+
+export async function updateTrailer(id: string, data: TrailerUpdateInput) {
+  const user = await requirePermission("fleet.trailers");
+  try {
+    const existing = await prisma.trailer.findUnique({ where: { id } });
+    if (!existing) throw new ValidationError("Trailer topilmadi.");
+
+    let year: number | undefined;
+    if (data.year !== undefined && data.year !== "") {
+      year = Number(data.year);
+      if (!Number.isInteger(year) || year < 1900 || year > 2100) {
+        throw new ValidationError("Yil noto'g'ri (1900–2100).");
+      }
+    }
+
+    const patch = {
+      trailerNumber: data.trailerNumber?.trim() || undefined,
+      vin: data.vin?.trim() || undefined,
+      year,
+      make: data.make?.trim() || undefined,
+      licensePlate: data.licensePlate?.trim() || undefined,
+      state: data.state?.trim() || undefined,
+      location: data.location?.trim() || undefined,
+      pickupDate: data.pickupDate ? new Date(data.pickupDate) : undefined,
+      annualInspectionDate: data.annualInspectionDate ? new Date(data.annualInspectionDate) : undefined,
+      notes: optText(data.notes),
+    };
+
+    const details = changedFields(existing, patch);
+    const trailer = await prisma.trailer.update({ where: { id }, data: patch });
+    await writeAudit(prisma, { userId: user.id, action: "UPDATE", entityType: "Trailer", entityId: id, details });
+
+    revalidatePath("/fleet/trailers");
+    revalidatePath(`/fleet/trailers/${id}`);
+    return trailer;
+  } catch (e) {
+    throw new Error(toUserMessage(e));
+  }
+}
+
+/** Admin-only: trailer'ni o'chirish. Bog'liq tarixi bor bo'lsa rad etiladi. */
+export async function deleteTrailer(id: string) {
+  const user = await requireAdmin();
+  try {
+    const existing = await prisma.trailer.findUnique({ where: { id } });
+    if (!existing) throw new ValidationError("Trailer topilmadi.");
+    await prisma.trailer.delete({ where: { id } });
+    await writeAudit(prisma, {
+      userId: user.id, action: "DELETE", entityType: "Trailer", entityId: id,
+      details: { trailerNumber: existing.trailerNumber, vin: existing.vin },
+    });
+    revalidatePath("/fleet/trailers");
+  } catch (e) {
+    throw new Error(deleteErrorMessage(e, "Trailer"));
+  }
+}
+
+/** Trucks "History" ko'rinishi (PRD 4.2): yopilgan biriktiruvlar tarixi. */
+export async function getTruckAssignmentHistory() {
+  await requireUser();
+  return prisma.assignment.findMany({
+    where: { truckId: { not: null }, isActive: false },
+    include: { driver: true, truck: true },
+    orderBy: { createdAt: "desc" },
+    take: 200,
+  });
+}
+
 // ---- TRUCK PROFILE + ASSIGNMENT WORKFLOW (PRD 4.2–4.3) ----
 
 /** Truck profili — barcha bog'liq tarix bilan. */
@@ -161,7 +335,10 @@ export async function assignTruck(input: { truckId: string; driverId: string; pi
       });
       await tx.truck.update({ where: { id: input.truckId }, data: { status: "ASSIGNED" } });
       await tx.auditLog.create({
-        data: { userId: user.id, action: "ASSIGN", entityType: "Truck", entityId: input.truckId },
+        data: {
+          userId: user.id, action: "ASSIGN", entityType: "Truck", entityId: input.truckId,
+          details: { driverId: input.driverId, pickupDate: input.pickupDate },
+        },
       });
     });
 
@@ -207,7 +384,10 @@ export async function moveTruck(input: {
       }
       await tx.truck.update({ where: { id: input.truckId }, data: { status: newStatus } });
       await tx.auditLog.create({
-        data: { userId: user.id, action: "MOVE", entityType: "Truck", entityId: input.truckId },
+        data: {
+          userId: user.id, action: "MOVE", entityType: "Truck", entityId: input.truckId,
+          details: { mode: input.mode, newStatus, location: input.location ?? null, reason: input.reason ?? null },
+        },
       });
     });
 
@@ -254,7 +434,10 @@ export async function assignTrailer(input: { trailerId: string; driverId: string
       });
       await tx.trailer.update({ where: { id: input.trailerId }, data: { status: "EMPTY" } });
       await tx.auditLog.create({
-        data: { userId: user.id, action: "ASSIGN", entityType: "Trailer", entityId: input.trailerId },
+        data: {
+          userId: user.id, action: "ASSIGN", entityType: "Trailer", entityId: input.trailerId,
+          details: { driverId: input.driverId, pickupDate: input.pickupDate },
+        },
       });
     });
 
@@ -284,7 +467,10 @@ export async function dropTrailer(input: { trailerId: string; location?: string;
       });
       await tx.trailer.update({ where: { id: input.trailerId }, data: { status: "UNASSIGNED" } });
       await tx.auditLog.create({
-        data: { userId: user.id, action: "DROP", entityType: "Trailer", entityId: input.trailerId },
+        data: {
+          userId: user.id, action: "DROP", entityType: "Trailer", entityId: input.trailerId,
+          details: { location: input.location ?? null, reason: input.reason ?? null },
+        },
       });
     });
 
@@ -300,12 +486,17 @@ export async function setTrailerStatus(input: { trailerId: string; status: strin
   const user = await requirePermission("fleet.trailers");
   try {
     requireField(input.trailerId, "Trailer");
+    const existing = await prisma.trailer.findUnique({ where: { id: input.trailerId } });
+    if (!existing) throw new ValidationError("Trailer topilmadi.");
     await prisma.trailer.update({
       where: { id: input.trailerId },
       data: { status: input.status as TrailerStatus },
     });
     await prisma.auditLog.create({
-      data: { userId: user.id, action: "STATUS_CHANGE", entityType: "Trailer", entityId: input.trailerId },
+      data: {
+        userId: user.id, action: "STATUS_CHANGE", entityType: "Trailer", entityId: input.trailerId,
+        details: { status: { from: existing.status, to: input.status } },
+      },
     });
     revalidatePath(`/fleet/trailers/${input.trailerId}`);
     revalidatePath("/fleet/trailers");
