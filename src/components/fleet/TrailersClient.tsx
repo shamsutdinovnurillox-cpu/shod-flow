@@ -1,5 +1,6 @@
 "use client";
 
+import { showError } from "@/components/ui/toast";
 import { useState } from "react";
 import Link from "next/link";
 import { createTrailer } from "@/app/actions/fleet";
@@ -43,7 +44,7 @@ export function TrailersClient({ initialTrailers }: { initialTrailers: Trailer[]
       });
     } catch (error) {
       console.error(error);
-      alert(error instanceof Error ? error.message : "Amaliyot bajarilmadi.");
+      showError(error instanceof Error ? error.message : "Amaliyot bajarilmadi.");
     } finally {
       setLoading(false);
     }

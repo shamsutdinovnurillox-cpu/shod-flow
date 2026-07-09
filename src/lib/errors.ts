@@ -1,5 +1,12 @@
 import { Prisma } from "@prisma/client";
-import { AuthError } from "./auth-guard";
+
+/** Avtorizatsiya xatosi — guard'lar tashlaydi, foydalanuvchiga ko'rsatiladi. */
+export class AuthError extends Error {
+  constructor(message = "Ruxsat yo'q.") {
+    super(message);
+    this.name = "AuthError";
+  }
+}
 
 // ============================================================================
 // Server action xatolarini foydalanuvchi ko'radigan tushunarli xabarga aylantiradi.

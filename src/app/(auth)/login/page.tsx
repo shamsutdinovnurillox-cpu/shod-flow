@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 import { Truck, LogIn, Smartphone, ArrowLeft } from "lucide-react";
 import { preAuth } from "@/app/actions/login-actions";
 
+// Demo hisoblar faqat developmentda ko'rsatiladi (prodda seed parollari sir emasligi xavfli).
+const SHOW_DEMO = process.env.NODE_ENV !== "production";
 const DEMO_ACCOUNTS = [
   { label: "Admin", email: "admin@shodflow.com" },
   { label: "Fleet", email: "fleet@shodflow.com" },
@@ -152,6 +154,7 @@ export default function LoginPage() {
                 </button>
               </form>
 
+              {SHOW_DEMO && (
               <div className="mt-6 border-t border-border pt-5">
                 <p className="mb-2 text-center text-xs font-medium uppercase tracking-wider text-faint">
                   Demo hisoblar (bosib to&apos;ldiring)
@@ -170,6 +173,7 @@ export default function LoginPage() {
                 </div>
                 <p className="mt-2 text-center text-xs text-faint">parol: password123</p>
               </div>
+              )}
             </>
           ) : (
             <form className="mt-8 space-y-4" onSubmit={handleMfa}>

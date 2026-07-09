@@ -1,5 +1,6 @@
 "use client";
 
+import { showError } from "@/components/ui/toast";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createUser, setUserActive, updateUserRole, adminResetPassword, updateUserPermissions, adminDisableMfa } from "@/app/actions/users";
@@ -36,7 +37,7 @@ export function UsersClient({ users, currentUserId }: { users: UserRow[]; curren
       setTarget(null);
       router.refresh();
     } catch (err) {
-      alert(err instanceof Error ? err.message : fallback);
+      showError(err instanceof Error ? err.message : fallback);
     } finally {
       setLoading(false);
     }

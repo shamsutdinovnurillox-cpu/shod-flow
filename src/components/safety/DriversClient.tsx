@@ -1,5 +1,6 @@
 "use client";
 
+import { showError } from "@/components/ui/toast";
 import { useState } from "react";
 import Link from "next/link";
 import { createDriver } from "@/app/actions/safety";
@@ -36,7 +37,7 @@ export function DriversClient({ initialDrivers }: { initialDrivers: Driver[] }) 
       setIsModalOpen(false);
       setFormData(emptyForm);
     } catch (error) {
-      alert(error instanceof Error ? error.message : "Haydovchini qo'shishda xatolik.");
+      showError(error instanceof Error ? error.message : "Haydovchini qo'shishda xatolik.");
     } finally {
       setLoading(false);
     }

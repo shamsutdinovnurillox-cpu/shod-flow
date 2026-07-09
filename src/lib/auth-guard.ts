@@ -13,12 +13,8 @@ import { canAccess } from "@/lib/modules";
 // chunki server action'lar to'g'ridan-to'g'ri chaqirilishi mumkin.
 // ============================================================================
 
-export class AuthError extends Error {
-  constructor(message = "Ruxsat yo'q.") {
-    super(message);
-    this.name = "AuthError";
-  }
-}
+export { AuthError } from "./errors";
+import { AuthError } from "./errors";
 
 export interface SessionUser {
   id: string;

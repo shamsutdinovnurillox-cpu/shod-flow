@@ -1,5 +1,6 @@
 import { AppLayout } from "@/components/layout/AppLayout";
 import { SessionProvider } from "next-auth/react";
+import { Toaster } from "@/components/ui/toast";
 
 export default function DashboardLayout({
   children,
@@ -9,6 +10,7 @@ export default function DashboardLayout({
   return (
     <SessionProvider>
       <AppLayout>{children}</AppLayout>
+      <Toaster />
     </SessionProvider>
   );
 }
