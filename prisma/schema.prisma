@@ -361,9 +361,12 @@ model Document {
   type       String   // REGISTRATION, ANNUAL_INSPECTION, CDL, MED_CARD, COI, etc.
   issueDate  DateTime?
   expiryDate DateTime?
-  fileUrl    String   // S3 file key
+  fileUrl    String   // UI havolasi: /api/files/{id} (yangi) yoki legacy to'g'ridan-to'g'ri URL
+  storageKey String?  // "s3:{key}" yoki "local:{uuid}" — fayl qayerda saqlanganini aniqlaydi
+  fileName   String?  // Asl fayl nomi (qidiruv va ko'rsatish uchun)
+  replacesId String?  // Almashtirilgan eski versiya hujjatining ID'si (versiya zanjiri)
   uploadedBy String   // User ID
-  
+
   createdAt  DateTime @default(now())
 }
 
@@ -378,6 +381,7 @@ model Notification {
   dueDate    DateTime?
 
   createdAt  DateTime @default(now())
+  updatedAt  DateTime @default(now()) @updatedAt
 }
 
 enum NotificationStatus {

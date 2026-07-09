@@ -1,4 +1,4 @@
-import { S3Client, PutObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
+import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 const s3Client = new S3Client({
@@ -33,4 +33,8 @@ export const getFileUrl = async (bucket: string, key: string, expiresIn = 3600) 
   });
 
   return await getSignedUrl(s3Client, command, { expiresIn });
+};
+
+export const deleteFile = async (bucket: string, key: string) => {
+  return await s3Client.send(new DeleteObjectCommand({ Bucket: bucket, Key: key }));
 };

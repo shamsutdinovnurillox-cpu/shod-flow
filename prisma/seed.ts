@@ -36,14 +36,14 @@ async function main() {
   const truck1 = await prisma.truck.create({
     data: { unitNumber: "T-101", vin: "1FUJGLDR5CLBP1234", licensePlate: "AA1001", make: "Freightliner", year: 2021, ownershipType: "COMPANY", location: "Chicago Yard", status: "ASSIGNED", motiveGateway: "MG-1001", camera: "CAM-1001", eldPt30: "ELD-1001" },
   });
-  const truck2 = await prisma.truck.create({
+  await prisma.truck.create({
     data: { unitNumber: "T-102", vin: "3AKJGLDV8FSFJ5678", licensePlate: "AA1002", make: "Volvo", year: 2020, ownershipType: "LEASED", location: "Dallas Yard", status: "UNASSIGNED" },
   });
   const truck3 = await prisma.truck.create({
     data: { unitNumber: "T-103", vin: "1XKYD49X9MJ333999", licensePlate: "AA1003", make: "Kenworth", year: 2022, ownershipType: "OWNER_OPERATOR", location: "Service Shop", status: "IN_SERVICE" },
   });
 
-  const trailer1 = await prisma.trailer.create({
+  await prisma.trailer.create({
     data: { trailerNumber: "TR-501", vin: "1GRAA0622BJ501111", year: 2019, make: "Wabash", licensePlate: "BB5001", state: "IL", location: "Chicago Yard", pickupDate: yearsAgo(1), annualInspectionDate: daysFromNow(120), status: "LOADED" },
   });
   await prisma.trailer.create({
