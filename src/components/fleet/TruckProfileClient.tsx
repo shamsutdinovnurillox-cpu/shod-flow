@@ -8,6 +8,9 @@ import { assignTruck, moveTruck, updateTruck } from "@/app/actions/fleet";
 import type { TruckProfile, Driver } from "@/types/models";
 import { ArrowLeft, Truck, User, MapPin, Wrench, DollarSign } from "lucide-react";
 import { money, InfoCard, DetailPanel, Row, HistoryTable, Modal, Field, ModalActions } from "@/components/ui/profile";
+import { DeviceAssignmentPanel, DeviceHistoryPanel } from "@/components/fleet/DevicesPanel";
+import type { DeviceAssignmentRow } from "@/types/models";
+import { ExpiryDate, fmtDate, fmtDateTime } from "@/components/ui/expiry";
 
 const today = () => new Date().toISOString().split("T")[0];
 
@@ -17,7 +20,27 @@ const STATUS_STYLES: Record<string, string> = {
   IN_SERVICE: "bg-yellow-50 text-yellow-700",
 };
 
-export function TruckProfileClient({ truck, drivers }: { truck: TruckProfile; drivers: Driver[] }) {
+const DRIVER_STATUS_STYLES: Record<string, string> = {
+  ACTIVE: "bg-green-50 text-green-700",
+  ON_LEAVE: "bg-amber-50 text-amber-700",
+  TERMINATED: "bg-surface-2 text-muted",
+};
+
+const DRIVER_TYPE_LABELS: Record<string, string> = {
+  COMPANY: "Company",
+  OWNER_OPERATOR: "Owner Operator",
+  LEASE_PURCHASE: "Lease Purchase",
+};
+
+export function TruckProfileClient({
+  truck,
+  drivers,
+  deviceHistory,
+}: {
+  truck: TruckProfile;
+  drivers: Driver[];
+  deviceHistory: DeviceAssignmentRow[];
+}) {
   const router = useRouter();
   const [modal, setModal] = useState<null | "assign" | "move" | "edit">(null);
   const [loading, setLoading] = useState(false);
@@ -28,7 +51,9 @@ export function TruckProfileClient({ truck, drivers }: { truck: TruckProfile; dr
   const serviceCost = truck.services.reduce((s, x) => s + (x.cost ?? 0), 0);
   const expenseCost = truck.expenses.reduce((s, x) => s + x.amount, 0);
 
-  const [assignForm, setAssignForm] = useState({ driverId: drivers[0]?.id ?? "", pickupDate: today() });
+  // Faqat faol haydovchini biriktirish mumkin — bo'shatilgan yoki ta'tildagisi emas.
+  const assignableDrivers = drivers.filter((d) => d.status === "ACTIVE");
+  const [assignForm, setAssignForm] = useState({ driverId: "", pickupDate: today() });
   const [moveForm, setMoveForm] = useState({ mode: "DROP_YARD", location: "", reason: "", notes: "" });
   const [editForm, setEditForm] = useState({
     unitNumber: truck.unitNumber,
@@ -39,12 +64,8 @@ export function TruckProfileClient({ truck, drivers }: { truck: TruckProfile; dr
     ownershipType: truck.ownershipType,
     location: truck.location,
     notes: truck.notes ?? "",
-    motiveGateway: truck.motiveGateway ?? "",
-    camera: truck.camera ?? "",
-    prePass: truck.prePass ?? "",
-    eldPt30: truck.eldPt30 ?? "",
-    tablet: truck.tablet ?? "",
-    chains: truck.chains,
+    registrationExpiry: truck.registrationExpiry ? new Date(truck.registrationExpiry).toISOString().split("T")[0] : "",
+    annualInspectionDate: truck.annualInspectionDate ? new Date(truck.annualInspectionDate).toISOString().split("T")[0] : "",
   });
 
   const onEdit = async (e: React.FormEvent) => {
@@ -100,7 +121,7 @@ export function TruckProfileClient({ truck, drivers }: { truck: TruckProfile; dr
         <div className="flex items-center gap-4">
           <div className="p-3 bg-blue-100 text-blue-600 rounded-xl"><Truck className="h-8 w-8" /></div>
           <div>
-            <h1 className="text-3xl font-bold text-fg">{truck.unitNumber}</h1>
+            <h1 className="text-3xl font-semibold tracking-tight text-fg">{truck.unitNumber}</h1>
             <p className="text-muted">{truck.make} · {truck.year} · {truck.ownershipType}</p>
           </div>
           <span className={`ml-2 inline-flex rounded-full px-3 py-1 text-xs font-semibold ${STATUS_STYLES[truck.status] ?? "bg-surface-2 text-muted"}`}>
@@ -108,9 +129,9 @@ export function TruckProfileClient({ truck, drivers }: { truck: TruckProfile; dr
           </span>
         </div>
         <div className="flex gap-3">
-          <button onClick={() => setModal("assign")} className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">Assign Driver</button>
-          <button onClick={() => setModal("move")} className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-fg hover:bg-surface-2">Move / Drop</button>
-          <button onClick={() => setModal("edit")} className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-fg hover:bg-surface-2">Edit</button>
+          <button onClick={() => setModal("assign")} className="btn btn-primary">Assign Driver</button>
+          <button onClick={() => setModal("move")} className="btn btn-secondary">Move / Drop</button>
+          <button onClick={() => setModal("edit")} className="btn btn-secondary">Edit</button>
         </div>
       </div>
 
@@ -128,32 +149,84 @@ export function TruckProfileClient({ truck, drivers }: { truck: TruckProfile; dr
           <Row k="VIN" v={truck.vin} />
           <Row k="License Plate" v={truck.licensePlate} />
           <Row k="Ownership" v={truck.ownershipType} />
-          <Row k="Devices" v={[truck.motiveGateway && "Motive", truck.camera && "Camera", truck.prePass && "PrePass", truck.eldPt30 && "ELD", truck.tablet && "Tablet", truck.chains && "Chains"].filter(Boolean).join(", ") || "—"} />
+          <Row k="Registration Expiry" v={<ExpiryDate date={truck.registrationExpiry} />} />
+          <Row k="Annual Inspection" v={<ExpiryDate date={truck.annualInspectionDate} />} />
+          <Row k="Devices" v={truck.devices.map((d) => d.name).join(", ") || "—"} />
         </DetailPanel>
 
-        <DetailPanel title={`Assignment History (${truck.assignments.length})`}>
-          {truck.assignments.length === 0 ? (
-            <p className="text-sm text-muted py-4">No assignments yet.</p>
+        {/* Joriy haydovchi — ma'lumot Driver jadvalidan, profilga havola bilan. */}
+        <DetailPanel title="Current Driver">
+          {currentDriver ? (
+            <>
+              <div className="flex items-center justify-between pb-3">
+                <Link href={`/safety/drivers/${currentDriver.id}`} className="text-base font-semibold text-blue-600 hover:underline">
+                  {currentDriver.firstName} {currentDriver.lastName}
+                </Link>
+                <span className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${DRIVER_STATUS_STYLES[currentDriver.status] ?? "bg-surface-2 text-muted"}`}>
+                  {currentDriver.status}
+                </span>
+              </div>
+              <Row k="Driver Type" v={DRIVER_TYPE_LABELS[currentDriver.driverType] ?? currentDriver.driverType} />
+              <Row k="CDL Number" v={`${currentDriver.cdlNumber} (${currentDriver.cdlState})`} />
+              <Row k="CDL Expiration" v={<ExpiryDate date={currentDriver.cdlExpiryDate} />} />
+              <Row k="Medical Expiration" v={<ExpiryDate date={currentDriver.medCardExpiryDate} />} />
+              <Row k="Hired" v={fmtDate(currentDriver.hireDate)} />
+              <Row k="Pickup Date" v={fmtDate(activeAssignment?.pickupDate)} />
+            </>
           ) : (
-            <ul className="divide-y divide-border">
-              {truck.assignments.map((a) => (
-                <li key={a.id} className="py-3 flex items-center justify-between text-sm">
-                  <span className="font-medium text-fg">{a.driver ? `${a.driver.firstName} ${a.driver.lastName}` : "—"}</span>
-                  <span className="text-muted">
-                    {new Date(a.pickupDate).toLocaleDateString()} → {a.dropoffDate ? new Date(a.dropoffDate).toLocaleDateString() : "present"}
-                    {a.isActive && <span className="ml-2 rounded-full bg-green-50 px-2 py-0.5 text-xs text-green-700">active</span>}
-                  </span>
-                </li>
-              ))}
-            </ul>
+            <p className="py-4 text-sm text-muted">No driver assigned.</p>
           )}
         </DetailPanel>
       </div>
 
+      <DetailPanel title={`Assignment History (${truck.assignments.length})`}>
+        {truck.assignments.length === 0 ? (
+          <p className="text-sm text-muted py-4">No assignments yet.</p>
+        ) : (
+          <ul className="divide-y divide-border">
+            {truck.assignments.map((a) => (
+              <li key={a.id} className="py-3 flex flex-wrap items-center justify-between gap-2 text-sm">
+                {a.driver ? (
+                  <Link href={`/safety/drivers/${a.driver.id}`} className="font-medium text-blue-600 hover:underline">
+                    {a.driver.firstName} {a.driver.lastName}
+                    <span className="ml-2 text-xs font-normal text-muted">
+                      {DRIVER_TYPE_LABELS[a.driver.driverType] ?? a.driver.driverType} · CDL {a.driver.cdlNumber}
+                    </span>
+                  </Link>
+                ) : (
+                  <span className="font-medium text-fg">—</span>
+                )}
+                <span className="text-muted">
+                  {fmtDate(a.pickupDate)} → {a.dropoffDate ? fmtDate(a.dropoffDate) : "present"}
+                  {a.isActive && <span className="ml-2 rounded-full bg-green-50 px-2 py-0.5 text-xs text-green-700">active</span>}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </DetailPanel>
+
+      <DeviceAssignmentPanel truckId={truck.id} truckVin={truck.vin} initialDevices={truck.devices} />
+
+      <DeviceHistoryPanel assignments={deviceHistory} />
+
       <HistoryTable
         title={`Service History (${truck.services.length})`}
-        head={["Date", "Type", "Shop", "Status", "Cost"]}
-        rows={truck.services.map((s) => [new Date(s.serviceDate).toLocaleDateString(), s.serviceType, s.shop, s.status, s.cost != null ? money(s.cost) : "—"])}
+        head={["Service Date", "Service Type", "Status", "Shop Name", "Mechanic", "Cost", "Odometer", "Description", "Arrived", "Resolved"]}
+        rows={truck.services.map((s) => [
+          <span key="d" className="font-medium text-fg">{fmtDate(s.serviceDate)}</span>,
+          s.serviceType,
+          <span key="s" className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${s.status === "COMPLETED" ? "bg-green-50 text-green-700" : "bg-blue-50 text-blue-700"}`}>
+            {s.status === "COMPLETED" ? "Completed" : "In Progress"}
+          </span>,
+          s.shop,
+          s.mechanic || "—",
+          s.cost != null ? money(s.cost) : "—",
+          s.odometer != null ? s.odometer.toLocaleString() : "—",
+          s.description || "—",
+          fmtDateTime(s.arrivalTime),
+          fmtDateTime(s.completionTime),
+        ])}
       />
       <HistoryTable
         title={`Expense History (${truck.expenses.length})`}
@@ -168,8 +241,15 @@ export function TruckProfileClient({ truck, drivers }: { truck: TruckProfile; dr
             <Field label="Driver">
               <select required value={assignForm.driverId} onChange={(e) => setAssignForm({ ...assignForm, driverId: e.target.value })} className="modal-input">
                 <option value="">Select driver</option>
-                {drivers.map((d) => <option key={d.id} value={d.id}>{d.firstName} {d.lastName}</option>)}
+                {assignableDrivers.map((d) => (
+                  <option key={d.id} value={d.id}>
+                    {d.firstName} {d.lastName} — {DRIVER_TYPE_LABELS[d.driverType] ?? d.driverType} · CDL {d.cdlNumber}
+                  </option>
+                ))}
               </select>
+              {assignableDrivers.length === 0 && (
+                <p className="mt-1 text-xs text-amber-600">No active drivers available.</p>
+              )}
             </Field>
             <Field label="Pickup Date">
               <input required type="date" value={assignForm.pickupDate} onChange={(e) => setAssignForm({ ...assignForm, pickupDate: e.target.value })} className="modal-input" />
@@ -182,7 +262,7 @@ export function TruckProfileClient({ truck, drivers }: { truck: TruckProfile; dr
       {/* Edit modal */}
       {modal === "edit" && (
         <Modal title="Edit Truck" onClose={() => setModal(null)}>
-          <form onSubmit={onEdit} className="space-y-4 max-h-[70vh] overflow-y-auto pr-1">
+          <form onSubmit={onEdit} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <Field label="Unit Number">
                 <input required value={editForm.unitNumber} onChange={(e) => setEditForm({ ...editForm, unitNumber: e.target.value })} className="modal-input" />
@@ -209,26 +289,14 @@ export function TruckProfileClient({ truck, drivers }: { truck: TruckProfile; dr
               <Field label="Home Location">
                 <input required value={editForm.location} onChange={(e) => setEditForm({ ...editForm, location: e.target.value })} className="modal-input" />
               </Field>
-              <Field label="Motive Gateway">
-                <input value={editForm.motiveGateway} onChange={(e) => setEditForm({ ...editForm, motiveGateway: e.target.value })} className="modal-input" />
+              <Field label="Registration Expiry">
+                <input type="date" value={editForm.registrationExpiry} onChange={(e) => setEditForm({ ...editForm, registrationExpiry: e.target.value })} className="modal-input" />
               </Field>
-              <Field label="Camera">
-                <input value={editForm.camera} onChange={(e) => setEditForm({ ...editForm, camera: e.target.value })} className="modal-input" />
-              </Field>
-              <Field label="PrePass">
-                <input value={editForm.prePass} onChange={(e) => setEditForm({ ...editForm, prePass: e.target.value })} className="modal-input" />
-              </Field>
-              <Field label="ELD PT30">
-                <input value={editForm.eldPt30} onChange={(e) => setEditForm({ ...editForm, eldPt30: e.target.value })} className="modal-input" />
-              </Field>
-              <Field label="Tablet">
-                <input value={editForm.tablet} onChange={(e) => setEditForm({ ...editForm, tablet: e.target.value })} className="modal-input" />
+              <Field label="Annual Inspection">
+                <input type="date" value={editForm.annualInspectionDate} onChange={(e) => setEditForm({ ...editForm, annualInspectionDate: e.target.value })} className="modal-input" />
               </Field>
             </div>
-            <label className="flex items-center gap-2 text-sm text-fg">
-              <input type="checkbox" checked={editForm.chains} onChange={(e) => setEditForm({ ...editForm, chains: e.target.checked })} />
-              Chains
-            </label>
+            <p className="text-xs text-muted">Devices are managed in the Devices panel below.</p>
             <Field label="Notes">
               <textarea rows={2} value={editForm.notes} onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })} className="modal-input" />
             </Field>

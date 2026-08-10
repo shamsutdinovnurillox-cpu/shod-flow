@@ -72,7 +72,7 @@ export function TrailerProfileClient({ trailer, drivers }: { trailer: TrailerPro
         <div className="flex items-center gap-4">
           <div className="p-3 bg-indigo-100 text-indigo-600 rounded-xl"><Container className="h-8 w-8" /></div>
           <div>
-            <h1 className="text-3xl font-bold text-fg">{trailer.trailerNumber}</h1>
+            <h1 className="text-3xl font-semibold tracking-tight text-fg">{trailer.trailerNumber}</h1>
             <p className="text-muted">{trailer.make} · {trailer.year} · {trailer.state}</p>
           </div>
           <span className={`ml-2 inline-flex rounded-full px-3 py-1 text-xs font-semibold ${STATUS_STYLES[trailer.status] ?? "bg-surface-2 text-muted"}`}>
@@ -80,10 +80,10 @@ export function TrailerProfileClient({ trailer, drivers }: { trailer: TrailerPro
           </span>
         </div>
         <div className="flex gap-3">
-          <button onClick={() => setModal("assign")} className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">Assign Driver</button>
-          <button onClick={() => setModal("status")} className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-fg hover:bg-surface-2">Set Status</button>
-          <button onClick={() => setModal("drop")} className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-fg hover:bg-surface-2">Drop</button>
-          <button onClick={() => setModal("edit")} className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-fg hover:bg-surface-2">Edit</button>
+          <button onClick={() => setModal("assign")} className="btn btn-primary">Assign Driver</button>
+          <button onClick={() => setModal("status")} className="btn btn-secondary">Set Status</button>
+          <button onClick={() => setModal("drop")} className="btn btn-secondary">Drop</button>
+          <button onClick={() => setModal("edit")} className="btn btn-secondary">Edit</button>
         </div>
       </div>
 
@@ -137,7 +137,7 @@ export function TrailerProfileClient({ trailer, drivers }: { trailer: TrailerPro
 
       {modal === "edit" && (
         <Modal title="Edit Trailer" onClose={() => setModal(null)}>
-          <form onSubmit={(e) => { e.preventDefault(); run(async () => { await updateTrailer(trailer.id, editForm); }, "Saqlashda xatolik."); }} className="space-y-4 max-h-[70vh] overflow-y-auto pr-1">
+          <form onSubmit={(e) => { e.preventDefault(); run(async () => { await updateTrailer(trailer.id, editForm); }, "Saqlashda xatolik."); }} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <Field label="Trailer Number">
                 <input required value={editForm.trailerNumber} onChange={(e) => setEditForm({ ...editForm, trailerNumber: e.target.value })} className="modal-input" />

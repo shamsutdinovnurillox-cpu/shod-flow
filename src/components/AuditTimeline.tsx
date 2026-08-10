@@ -37,7 +37,7 @@ function detailsSummary(details: unknown): string | null {
 /** Yozuvning audit tarixi — detail sahifalardagi timeline (PRD 5.4). */
 export function AuditTimeline({ logs }: { logs: TimelineLog[] }) {
   return (
-    <div className="rounded-xl border border-border bg-surface shadow-sm p-6">
+    <div className="card p-6">
       <h2 className="text-lg font-bold text-fg mb-3 flex items-center gap-2">
         <History className="h-5 w-5 text-muted" /> Timeline
       </h2>

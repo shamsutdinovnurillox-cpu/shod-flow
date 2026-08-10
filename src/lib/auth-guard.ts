@@ -1,6 +1,7 @@
 import "server-only";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
+import { prisma } from "@/lib/prisma";
 import type { Department } from "@prisma/client";
 import { canAccess } from "@/lib/modules";
 
@@ -25,11 +26,42 @@ export interface SessionUser {
   permissions: string[];
 }
 
+/**
+ * Sessiyani bazaga solishtiradi va foydalanuvchini qaytaradi (yo'q bo'lsa null).
+ *
+ * JWT o'zi bilan rol/bo'lim/ruxsatlarni olib yuradi, lekin ular token berilgan
+ * paytdagi holat. Bazadan qayta o'qish uch narsani hal qiladi:
+ *   1. O'chirilgan yoki boshqa bazaga tegishli user id — FK xatosi o'rniga
+ *      tushunarli "qaytadan kiring" xabari;
+ *   2. isActive=false qilingan hisob eski token bilan ishlashda davom etmaydi;
+ *   3. Rol/ruxsat o'zgarishi darhol kuchga kiradi, token muddatini kutmasdan.
+ */
+async function activeSessionUser(): Promise<SessionUser | null> {
+  const session = await auth();
+  const sessionUser = session?.user as SessionUser | undefined;
+  if (!sessionUser?.id) return null;
+
+  const dbUser = await prisma.user.findUnique({
+    where: { id: sessionUser.id },
+    select: { id: true, name: true, email: true, role: true, department: true, permissions: true, isActive: true },
+  });
+  if (!dbUser || !dbUser.isActive) return null;
+
+  return {
+    id: dbUser.id,
+    name: dbUser.name,
+    email: dbUser.email,
+    role: dbUser.role,
+    department: dbUser.department,
+    permissions: dbUser.permissions,
+  };
+}
+
 /** Tizimga kirgan foydalanuvchini qaytaradi yoki xato tashlaydi. */
 export async function requireUser(): Promise<SessionUser> {
-  const session = await auth();
-  if (!session?.user) throw new AuthError("Tizimga kiring.");
-  return session.user as SessionUser;
+  const user = await activeSessionUser();
+  if (!user) throw new AuthError("Sessiya yaroqsiz. Chiqib, qaytadan tizimga kiring.");
+  return user;
 }
 
 /** Foydalanuvchi shu bo'limga (yoki ADMIN) tegishliligini talab qiladi. */
@@ -65,7 +97,9 @@ export async function requirePermission(moduleKey: string): Promise<SessionUser>
  * (Server component boshida chaqiriladi.)
  */
 export async function requireModule(moduleKey: string): Promise<void> {
-  const session = await auth();
-  if (!session?.user) redirect("/login");
-  if (!canAccess(session.user, moduleKey)) redirect("/");
+  const user = await activeSessionUser();
+  // Sessiya yaroqsiz bo'lsa — login'ga. ?stale=1 middleware'ga "bu tokenni
+  // haqiqiy deb bilma" deb aytadi, aks holda u bizni "/" ga qaytarib yuboradi.
+  if (!user) redirect("/login?stale=1");
+  if (!canAccess(user, moduleKey)) redirect("/");
 }

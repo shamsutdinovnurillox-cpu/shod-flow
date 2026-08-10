@@ -39,15 +39,22 @@ export function Toaster() {
   if (toasts.length === 0) return null;
 
   return (
-    <div className="fixed bottom-4 right-4 z-[100] flex flex-col gap-2 max-w-sm">
+    <div
+      role="status"
+      aria-live="polite"
+      className="pointer-events-none fixed inset-x-3 bottom-4 z-[100] flex max-w-sm flex-col gap-2 sm:inset-x-auto sm:right-4"
+    >
       {toasts.map((t) => (
-        <div key={t.id} className="flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 p-4 shadow-lg text-sm text-red-800">
+        <div
+          key={t.id}
+          className="pointer-events-auto flex animate-slide-up items-start gap-3 rounded-xl border border-red-200 bg-red-50 p-3.5 text-sm text-red-800 shadow-[var(--shadow-lg)]"
+        >
           <XCircle className="h-5 w-5 shrink-0 text-red-600" />
           <p className="min-w-0 break-words">{t.message}</p>
           <button
             onClick={() => setToasts((prev) => prev.filter((x) => x.id !== t.id))}
             aria-label="Dismiss"
-            className="ml-auto shrink-0 rounded p-0.5 text-red-400 hover:text-red-700"
+            className="ml-auto shrink-0 rounded-md p-0.5 text-red-400 transition-colors hover:text-red-700"
           >
             <X className="h-4 w-4" />
           </button>

@@ -13,16 +13,16 @@ export function AuditLogsClient({ logs }: { logs: AuditLogWithUser[] }) {
         <h2 className="text-xl font-bold text-fg">System Audit Logs</h2>
       </div>
 
-      <div className="rounded-xl border border-border bg-surface shadow-sm overflow-hidden">
+      <div className="card overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm text-muted">
-            <thead className="bg-surface-2 text-fg">
+            <thead className="border-b border-border bg-surface-2/70">
               <tr>
-                <th className="px-6 py-4 font-medium">Timestamp</th>
-                <th className="px-6 py-4 font-medium">User</th>
-                <th className="px-6 py-4 font-medium">Action</th>
-                <th className="px-6 py-4 font-medium">Entity Type</th>
-                <th className="px-6 py-4 font-medium">Entity ID</th>
+                <th className="whitespace-nowrap px-5 py-3 text-xs font-semibold uppercase tracking-wide text-muted sm:px-6">Timestamp</th>
+                <th className="whitespace-nowrap px-5 py-3 text-xs font-semibold uppercase tracking-wide text-muted sm:px-6">User</th>
+                <th className="whitespace-nowrap px-5 py-3 text-xs font-semibold uppercase tracking-wide text-muted sm:px-6">Action</th>
+                <th className="whitespace-nowrap px-5 py-3 text-xs font-semibold uppercase tracking-wide text-muted sm:px-6">Entity Type</th>
+                <th className="whitespace-nowrap px-5 py-3 text-xs font-semibold uppercase tracking-wide text-muted sm:px-6">Entity ID</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
@@ -35,9 +35,9 @@ export function AuditLogsClient({ logs }: { logs: AuditLogWithUser[] }) {
               ) : (
                 logs.map((log) => (
                   <tr key={log.id} className="hover:bg-surface-2 transition-colors">
-                    <td className="px-6 py-4">{new Date(log.timestamp).toLocaleString()}</td>
-                    <td className="px-6 py-4 font-medium text-fg">{log.user?.email}</td>
-                    <td className="px-6 py-4">
+                    <td className="px-5 py-3.5 sm:px-6">{new Date(log.timestamp).toLocaleString()}</td>
+                    <td className="px-5 py-3.5 sm:px-6 font-medium text-fg">{log.user?.email}</td>
+                    <td className="px-5 py-3.5 sm:px-6">
                       <span className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${
                         log.action === 'CREATE' ? 'bg-green-50 text-green-700' : 
                         log.action === 'UPDATE' ? 'bg-blue-50 text-blue-700' : 
@@ -46,8 +46,8 @@ export function AuditLogsClient({ logs }: { logs: AuditLogWithUser[] }) {
                         {log.action}
                       </span>
                     </td>
-                    <td className="px-6 py-4">{log.entityType}</td>
-                    <td className="px-6 py-4 font-mono text-xs">{log.entityId}</td>
+                    <td className="px-5 py-3.5 sm:px-6">{log.entityType}</td>
+                    <td className="px-5 py-3.5 sm:px-6 font-mono text-xs">{log.entityId}</td>
                   </tr>
                 ))
               )}

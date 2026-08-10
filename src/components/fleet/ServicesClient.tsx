@@ -2,47 +2,184 @@
 
 import { showError } from "@/components/ui/toast";
 import { useState } from "react";
-import { createService, updateService, completeService } from "@/app/actions/services";
-import { Plus } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
+import { createServices, updateService, completeService, deleteService } from "@/app/actions/services";
+import {
+  Plus,
+  ShoppingCart,
+  Trash2,
+  ChevronRight,
+  Wrench,
+  Pencil,
+  CheckCircle2,
+  Check,
+} from "lucide-react";
 import type { ServiceWithUnit, Truck, Trailer } from "@/types/models";
-import { Modal, Field, ModalActions, money } from "@/components/ui/profile";
+import { Modal, ModalActions, money } from "@/components/ui/profile";
+import {
+  ServiceFormFields,
+  ServiceFormLayout,
+  ServiceAside,
+  ServiceRecordAside,
+  emptyServiceForm,
+  validateServiceForm,
+  type ServiceFormValues,
+} from "./ServiceFormFields";
+import { cn } from "@/lib/utils";
+import { useOpenOnNewParam } from "@/components/ui/use-new-param";
 
-const emptyForm = () => ({
-  entityType: "TRUCK",
-  unitId: "",
-  serviceDate: new Date().toISOString().split("T")[0],
-  serviceType: "",
-  shop: "",
-  mechanic: "",
-  cost: "",
-  lessorPaid: false,
-  odometer: "",
-  description: "",
-});
+/** Savatdagi yozuv — forma qiymatlari + ro'yxatda ajratish uchun lokal kalit. */
+interface CartItem extends ServiceFormValues {
+  key: number;
+}
 
-export function ServicesClient({ initialServices, trucks, trailers }: { initialServices: ServiceWithUnit[], trucks: Truck[], trailers: Trailer[] }) {
+const STATUS_STYLES: Record<string, string> = {
+  COMPLETED: "bg-emerald-50 text-emerald-700",
+  IN_PROGRESS: "bg-blue-50 text-blue-700",
+};
+
+export function ServicesClient({
+  initialServices,
+  trucks,
+  trailers,
+}: {
+  initialServices: ServiceWithUnit[];
+  trucks: Truck[];
+  trailers: Trailer[];
+}) {
+  const router = useRouter();
+  const { data: session } = useSession();
+  // O'chirish faqat adminda (server ham requireAdmin bilan tekshiradi).
+  const isAdmin = session?.user?.role === "ADMIN";
   const [services, setServices] = useState(initialServices);
+  const [deleting, setDeleting] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  // Dashboard tezkor amali (`?new=1`) bilan kelinganda modal o'zi ochiladi.
+  useOpenOnNewParam(() => setIsModalOpen(true));
   const [editing, setEditing] = useState<ServiceWithUnit | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const [formData, setFormData] = useState(emptyForm());
-  const [editForm, setEditForm] = useState(emptyForm());
+  const [formData, setFormData] = useState(emptyServiceForm());
+  const [editForm, setEditForm] = useState(emptyServiceForm());
+  const [cart, setCart] = useState<CartItem[]>([]);
+  /** Inline ro'yxatidagi qaysi yozuv hozir formada tahrirlanayotgani. */
+  const [editingKey, setEditingKey] = useState<number | null>(null);
 
   const replaceInList = (updated: ServiceWithUnit) =>
     setServices((prev) => prev.map((s) => (s.id === updated.id ? updated : s)));
 
+  const unitLabel = (f: ServiceFormValues) => {
+    if (f.entityType === "TRUCK") {
+      const t = trucks.find((u) => u.id === f.unitId);
+      return t ? `Truck ${t.unitNumber}` : "—";
+    }
+    const t = trailers.find((u) => u.id === f.unitId);
+    return t ? `Trailer ${t.trailerNumber}` : "—";
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setFormData(emptyServiceForm());
+    setCart([]);
+    setEditingKey(null);
+  };
+
+  /** Keyingi yozuv uchun formani tozalaydi (unit va sana saqlanib qoladi). */
+  const clearEntry = () =>
+    setFormData((f) => ({
+      ...f,
+      serviceType: "",
+      shop: "",
+      mechanic: "",
+      cost: "",
+      lessorPaid: false,
+      odometer: "",
+      description: "",
+    }));
+
+  /**
+   * Formadagi yozuvni ro'yxatga qo'shadi — yoki tahrirlanayotgan bo'lsa,
+   * o'sha yozuvni yangilaydi.
+   */
+  const addToCart = () => {
+    const problem = validateServiceForm(formData);
+    if (problem) {
+      showError(problem);
+      return;
+    }
+    if (editingKey !== null) {
+      setCart((prev) => prev.map((i) => (i.key === editingKey ? { ...formData, key: editingKey } : i)));
+      setEditingKey(null);
+    } else {
+      setCart((prev) => [...prev, { ...formData, key: prev.length ? prev[prev.length - 1].key + 1 : 1 }]);
+    }
+    // Unit va sana saqlanadi — bir unitga ketma-ket bir necha xizmat kiritish tez bo'ladi.
+    clearEntry();
+  };
+
+  /** Ro'yxatdagi yozuvni formaga qaytaradi. */
+  const editCartItem = (item: CartItem) => {
+    setFormData({ ...item });
+    setEditingKey(item.key);
+  };
+
+  const cancelCartEdit = () => {
+    setEditingKey(null);
+    clearEntry();
+  };
+
+  const removeFromCart = (key: number) => {
+    setCart((prev) => prev.filter((i) => i.key !== key));
+    if (key === editingKey) cancelCartEdit();
+  };
+
+  const cartTotal = cart.reduce((sum, i) => sum + (Number(i.cost) || 0), 0);
+  /**
+   * Formaga yangi yozuv kiritila boshlanganmi. Unit va sana qo'shishdan keyin
+   * ham qolib ketadi, shuning uchun ular hisobga olinmaydi — aks holda bo'sh
+   * forma ham "to'ldirilgan" deb sanalardi.
+   */
+  const formTouched = Boolean(
+    formData.serviceType.trim() ||
+      formData.shop.trim() ||
+      formData.mechanic.trim() ||
+      formData.cost ||
+      formData.odometer ||
+      formData.description.trim(),
+  );
+  // Tahrirlanayotgan yozuv allaqachon ro'yxatda — u qayta sanalmaydi.
+  const pendingCount = cart.length + (formTouched && editingKey === null ? 1 : 0);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Foydalanuvchi savatga qo'shmasdan to'g'ridan-to'g'ri "Save" bosishi mumkin —
+    // to'ldirilgan forma yo'qolib qolmasligi uchun avval savatga qo'shiladi.
+    let items: CartItem[] = cart;
+    if (formTouched) {
+      const problem = validateServiceForm(formData);
+      if (problem) {
+        showError(problem);
+        return;
+      }
+      items =
+        editingKey !== null
+          ? cart.map((i) => (i.key === editingKey ? { ...formData, key: editingKey } : i))
+          : [...cart, { ...formData, key: -1 }];
+    }
+    if (items.length === 0) {
+      showError("Inline is empty — add at least one service.");
+      return;
+    }
+
     setLoading(true);
     try {
-      const newService = await createService(formData);
-      // Server allaqachon truck/trailer relation'larini qaytaradi.
-      setServices([newService, ...services]);
-      setIsModalOpen(false);
-      setFormData(emptyForm());
+      const created = await createServices(items);
+      // Server truck/trailer relation'larini qaytaradi — ro'yxat darhol yangilanadi.
+      setServices([...created].reverse().concat(services));
+      closeModal();
     } catch (error) {
-      console.error(error);
       showError(error instanceof Error ? error.message : "Amaliyot bajarilmadi.");
     } finally {
       setLoading(false);
@@ -51,7 +188,9 @@ export function ServicesClient({ initialServices, trucks, trailers }: { initialS
 
   const openEdit = (service: ServiceWithUnit) => {
     setEditForm({
-      lessorPaid: false,
+      // Narxi yo'q yozuv — demak rental/lessor to'lagan; belgini tiklaymiz,
+      // aks holda forma narxni majburiy deb hisoblab qolardi.
+      lessorPaid: service.cost == null,
       entityType: service.entityType,
       unitId: service.truckId ?? service.trailerId ?? "",
       serviceDate: new Date(service.serviceDate).toISOString().split("T")[0],
@@ -70,15 +209,12 @@ export function ServicesClient({ initialServices, trucks, trailers }: { initialS
     if (!editing) return;
     setLoading(true);
     try {
-      const updated = await updateService(editing.id, {
-        serviceDate: editForm.serviceDate,
-        serviceType: editForm.serviceType,
-        shop: editForm.shop,
-        mechanic: editForm.mechanic,
-        cost: editForm.cost,
-        odometer: editForm.odometer,
-        description: editForm.description,
-      });
+      const problem = validateServiceForm(editForm);
+      if (problem) {
+        showError(problem);
+        return;
+      }
+      const updated = await updateService(editing.id, editForm);
       replaceInList(updated);
       setEditing(null);
     } catch (error) {
@@ -98,63 +234,128 @@ export function ServicesClient({ initialServices, trucks, trailers }: { initialS
     }
   };
 
+  const handleDelete = async (service: ServiceWithUnit) => {
+    if (!confirm(`Delete "${service.serviceType}"? Bu amalni qaytarib bo'lmaydi.`)) return;
+    setDeleting(service.id);
+    try {
+      await deleteService(service.id);
+      setServices((prev) => prev.filter((s) => s.id !== service.id));
+    } catch (error) {
+      showError(error instanceof Error ? error.message : "O'chirishda xatolik.");
+    } finally {
+      setDeleting(null);
+    }
+  };
+
+  const openDetail = (id: string) => router.push(`/fleet/services/${id}`);
+
+  const TH = "whitespace-nowrap px-5 py-3 text-xs font-semibold uppercase tracking-wide text-muted sm:px-6";
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold text-fg">Services</h1>
-        <button
-          onClick={() => setIsModalOpen(true)}
-          className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 transition-all"
-        >
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight text-fg">Services</h1>
+          <p className="mt-0.5 text-sm text-muted">
+            {services.length} {services.length === 1 ? "record" : "records"} · maintenance history
+          </p>
+        </div>
+        <button onClick={() => setIsModalOpen(true)} className="btn btn-primary">
           <Plus className="h-4 w-4" />
           Add Service
         </button>
       </div>
 
-      <div className="rounded-xl border border-border bg-surface shadow-sm overflow-hidden">
+      <div className="card overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm text-muted">
-            <thead className="bg-surface-2 text-fg">
+            <thead className="border-b border-border bg-surface-2/70">
               <tr>
-                <th className="px-6 py-4 font-medium">Unit</th>
-                <th className="px-6 py-4 font-medium">Date</th>
-                <th className="px-6 py-4 font-medium">Type</th>
-                <th className="px-6 py-4 font-medium">Shop</th>
-                <th className="px-6 py-4 font-medium">Cost</th>
-                <th className="px-6 py-4 font-medium">Status</th>
-                <th className="px-6 py-4 font-medium">Actions</th>
+                <th className={TH}>Unit</th>
+                <th className={TH}>Date</th>
+                <th className={TH}>Type</th>
+                <th className={TH}>Shop</th>
+                <th className={TH}>Cost</th>
+                <th className={TH}>Status</th>
+                <th className={TH}>Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
               {services.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-6 py-8 text-center text-muted">
-                    No services found.
+                  <td colSpan={7} className="px-6 py-14 text-center">
+                    <Wrench className="mx-auto h-8 w-8 text-faint" />
+                    <p className="mt-3 text-sm font-medium text-fg">No services yet</p>
+                    <p className="mt-1 text-sm text-muted">Add the first maintenance record to get started.</p>
                   </td>
                 </tr>
               ) : (
                 services.map((service) => (
-                  <tr key={service.id} className="hover:bg-surface-2 transition-colors">
-                    <td className="px-6 py-4 font-medium text-fg">
-                      {service.entityType === "TRUCK" ? `Truck: ${service.truck?.unitNumber}` : `Trailer: ${service.trailer?.trailerNumber}`}
+                  <tr
+                    key={service.id}
+                    onClick={() => openDetail(service.id)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        openDetail(service.id);
+                      }
+                    }}
+                    tabIndex={0}
+                    role="link"
+                    aria-label={`Open service ${service.serviceType}`}
+                    className="row-link group"
+                  >
+                    <td className="px-5 py-3.5 font-medium text-fg sm:px-6">
+                      {service.entityType === "TRUCK"
+                        ? `Truck: ${service.truck?.unitNumber}`
+                        : `Trailer: ${service.trailer?.trailerNumber}`}
                     </td>
-                    <td className="px-6 py-4">{new Date(service.serviceDate).toLocaleDateString()}</td>
-                    <td className="px-6 py-4">{service.serviceType}</td>
-                    <td className="px-6 py-4">{service.shop}</td>
-                    <td className="px-6 py-4">{service.cost != null ? money(service.cost) : "—"}</td>
-                    <td className="px-6 py-4">
-                      <span className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${
-                        service.status === "COMPLETED" ? "bg-green-50 text-green-700" : "bg-blue-50 text-blue-700"
-                      }`}>
-                        {service.status}
+                    <td className="whitespace-nowrap px-5 py-3.5 sm:px-6">
+                      {new Date(service.serviceDate).toLocaleDateString()}
+                    </td>
+                    <td className="px-5 py-3.5 sm:px-6">{service.serviceType}</td>
+                    <td className="px-5 py-3.5 sm:px-6">{service.shop}</td>
+                    <td className="px-5 py-3.5 tabular-nums sm:px-6">
+                      {service.cost != null ? money(service.cost) : "—"}
+                    </td>
+                    <td className="px-5 py-3.5 sm:px-6">
+                      <span className={cn("badge", STATUS_STYLES[service.status] ?? "badge-neutral")}>
+                        {service.status.replace("_", " ")}
                       </span>
                     </td>
-                    <td className="px-6 py-4">
-                      <div className="flex gap-3 text-sm font-medium">
-                        <button onClick={() => openEdit(service)} className="text-blue-600 hover:underline">Edit</button>
+                    <td className="px-5 py-3.5 sm:px-6">
+                      {/* Qator bosilganda detail ochiladi — amal tugmalari uni to'xtatadi. */}
+                      <div className="flex items-center gap-0.5" onClick={(e) => e.stopPropagation()}>
                         {service.status === "IN_PROGRESS" && (
-                          <button onClick={() => handleComplete(service)} className="text-green-600 hover:underline">Complete</button>
+                          <button
+                            onClick={() => handleComplete(service)}
+                            title="Mark as completed"
+                            aria-label="Mark as completed"
+                            className="btn btn-ghost btn-icon h-8 w-8 hover:bg-success-soft hover:text-success"
+                          >
+                            <CheckCircle2 className="h-4 w-4" />
+                          </button>
                         )}
+                        <button
+                          onClick={() => openEdit(service)}
+                          title="Edit service"
+                          aria-label="Edit service"
+                          className="btn btn-ghost btn-icon h-8 w-8"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </button>
+                        {isAdmin && (
+                          <button
+                            onClick={() => handleDelete(service)}
+                            disabled={deleting === service.id}
+                            title="Delete service"
+                            aria-label="Delete service"
+                            className="btn btn-ghost btn-icon h-8 w-8 hover:bg-danger-soft hover:text-danger"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        )}
+                        <ChevronRight className="ml-0.5 h-4 w-4 text-faint transition-transform group-hover:translate-x-0.5 group-hover:text-muted" />
                       </div>
                     </td>
                   </tr>
@@ -166,107 +367,140 @@ export function ServicesClient({ initialServices, trucks, trailers }: { initialS
       </div>
 
       {isModalOpen && (
-        <Modal title="Add Service" onClose={() => setIsModalOpen(false)}>
-          <form onSubmit={handleSubmit} className="space-y-4 max-h-[70vh] overflow-y-auto pr-1">
-            <div className="grid grid-cols-2 gap-4">
-              <Field label="Asset Type">
-                <select className="modal-input"
-                  value={formData.entityType} onChange={(e) => setFormData({ ...formData, entityType: e.target.value, unitId: "" })}>
-                  <option value="TRUCK">Truck</option>
-                  <option value="TRAILER">Trailer</option>
-                </select>
-              </Field>
-              <Field label="Unit">
-                <select required className="modal-input"
-                  value={formData.unitId} onChange={(e) => setFormData({ ...formData, unitId: e.target.value })}>
-                  <option value="">Select Unit</option>
-                  {formData.entityType === "TRUCK" ? (
-                    trucks.map(t => <option key={t.id} value={t.id}>{t.unitNumber}</option>)
+        <Modal
+          title="Add Services"
+          description="Add several services inline and save them in one go."
+          size="xl"
+          onClose={closeModal}
+        >
+          <form onSubmit={handleSubmit}>
+            <ServiceFormLayout
+              aside={
+                <ServiceAside
+                  icon={ShoppingCart}
+                  title="Inline"
+                  badge={<span className="badge badge-primary">{cart.length}</span>}
+                  footerLabel="Total cost"
+                  footerValue={money(cartTotal)}
+                >
+                  {cart.length === 0 ? (
+                    <div className="px-3 py-10 text-center">
+                      <ShoppingCart className="mx-auto h-7 w-7 text-faint" />
+                      <p className="mt-2.5 text-sm text-muted">Nothing added yet</p>
+                      <p className="mt-1 text-xs text-faint">
+                        Fill the form and press &laquo;Add inline&raquo;.
+                      </p>
+                    </div>
                   ) : (
-                    trailers.map(t => <option key={t.id} value={t.id}>{t.trailerNumber}</option>)
+                    <ul className="space-y-1.5">
+                      {cart.map((item) => (
+                        <li
+                          key={item.key}
+                          className={cn(
+                            "flex animate-slide-up items-start gap-2 rounded-lg border bg-surface p-2.5 transition-colors",
+                            // Formada ochilgan yozuv ajratib ko'rsatiladi.
+                            item.key === editingKey
+                              ? "border-primary bg-primary-soft"
+                              : "border-border"
+                          )}
+                        >
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-sm font-medium text-fg">{item.serviceType}</p>
+                            <p className="truncate text-xs text-muted">
+                              {unitLabel(item)} · {item.shop}
+                            </p>
+                          </div>
+                          <span className="shrink-0 text-sm font-medium tabular-nums text-fg">
+                            {item.cost ? money(Number(item.cost)) : "—"}
+                          </span>
+                          <div className="flex shrink-0 gap-0.5">
+                            <button
+                              type="button"
+                              onClick={() => editCartItem(item)}
+                              title="Edit"
+                              aria-label="Edit inline item"
+                              className="btn btn-ghost btn-icon h-7 w-7"
+                            >
+                              <Pencil className="h-3.5 w-3.5" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => removeFromCart(item.key)}
+                              title="Remove"
+                              aria-label="Remove inline item"
+                              className="btn btn-ghost btn-icon h-7 w-7 hover:bg-danger-soft hover:text-danger"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
                   )}
-                </select>
-              </Field>
-              <Field label="Service Type">
-                <input required className="modal-input"
-                  value={formData.serviceType} onChange={(e) => setFormData({ ...formData, serviceType: e.target.value })} />
-              </Field>
-              <Field label="Date">
-                <input required type="date" className="modal-input"
-                  value={formData.serviceDate} onChange={(e) => setFormData({ ...formData, serviceDate: e.target.value })} />
-              </Field>
-              <Field label="Shop">
-                <input required className="modal-input"
-                  value={formData.shop} onChange={(e) => setFormData({ ...formData, shop: e.target.value })} />
-              </Field>
-              <Field label="Mechanic">
-                <input className="modal-input"
-                  value={formData.mechanic} onChange={(e) => setFormData({ ...formData, mechanic: e.target.value })} />
-              </Field>
-              <Field label="Cost ($)">
-                <input required={!formData.lessorPaid} type="number" step="0.01" className="modal-input"
-                  value={formData.cost} onChange={(e) => setFormData({ ...formData, cost: e.target.value })} />
-              </Field>
-              {formData.entityType === "TRUCK" && (
-                <Field label="Odometer">
-                  <input type="number" className="modal-input"
-                    value={formData.odometer} onChange={(e) => setFormData({ ...formData, odometer: e.target.value })} />
-                </Field>
-              )}
-            </div>
-            <label className="flex items-center gap-2 text-sm text-fg">
-              <input type="checkbox" checked={formData.lessorPaid}
-                onChange={(e) => setFormData({ ...formData, lessorPaid: e.target.checked })} />
-              Rental / lessor-paid (cost optional)
-            </label>
-            <Field label="Description">
-              <input className="modal-input"
-                value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} />
-            </Field>
-            <ModalActions loading={loading} onCancel={() => setIsModalOpen(false)} submitLabel="Save Service" />
+                </ServiceAside>
+              }
+            >
+              <ServiceFormFields
+                value={formData}
+                onChange={(patch) => setFormData({ ...formData, ...patch })}
+                trucks={trucks}
+                trailers={trailers}
+              />
+
+              <div className="flex gap-2">
+                <button type="button" onClick={addToCart} className="btn btn-secondary flex-1">
+                  {editingKey === null ? (
+                    <>
+                      <Plus className="h-4 w-4" />
+                      Add inline
+                    </>
+                  ) : (
+                    <>
+                      <Check className="h-4 w-4" />
+                      Update inline item
+                    </>
+                  )}
+                </button>
+                {editingKey !== null && (
+                  <button type="button" onClick={cancelCartEdit} className="btn btn-ghost">
+                    Cancel
+                  </button>
+                )}
+              </div>
+            </ServiceFormLayout>
+
+            <ModalActions
+              loading={loading}
+              onCancel={closeModal}
+              submitLabel={pendingCount > 1 ? `Save ${pendingCount} services` : "Save Service"}
+            >
+              <span className="text-xs text-muted">
+                {cart.length > 0
+                  ? `${cart.length} ${cart.length === 1 ? "item" : "items"} inline`
+                  : "Nothing added yet"}
+              </span>
+            </ModalActions>
           </form>
         </Modal>
       )}
 
       {editing && (
-        <Modal title="Edit Service" onClose={() => setEditing(null)}>
-          <form onSubmit={handleEdit} className="space-y-4 max-h-[70vh] overflow-y-auto pr-1">
-            <div className="grid grid-cols-2 gap-4">
-              <Field label="Service Type">
-                <input required className="modal-input"
-                  value={editForm.serviceType} onChange={(e) => setEditForm({ ...editForm, serviceType: e.target.value })} />
-              </Field>
-              <Field label="Date">
-                <input required type="date" className="modal-input"
-                  value={editForm.serviceDate} onChange={(e) => setEditForm({ ...editForm, serviceDate: e.target.value })} />
-              </Field>
-              <Field label="Shop">
-                <input required className="modal-input"
-                  value={editForm.shop} onChange={(e) => setEditForm({ ...editForm, shop: e.target.value })} />
-              </Field>
-              <Field label="Mechanic">
-                <input className="modal-input"
-                  value={editForm.mechanic} onChange={(e) => setEditForm({ ...editForm, mechanic: e.target.value })} />
-              </Field>
-              <Field label="Cost ($)">
-                <input type="number" step="0.01" className="modal-input"
-                  value={editForm.cost} onChange={(e) => setEditForm({ ...editForm, cost: e.target.value })} />
-              </Field>
-              {editForm.entityType === "TRUCK" && (
-                <Field label="Odometer">
-                  <input type="number" className="modal-input"
-                    value={editForm.odometer} onChange={(e) => setEditForm({ ...editForm, odometer: e.target.value })} />
-                </Field>
-              )}
-            </div>
-            <Field label="Description">
-              <input className="modal-input"
-                value={editForm.description} onChange={(e) => setEditForm({ ...editForm, description: e.target.value })} />
-            </Field>
+        <Modal title="Edit Service" size="xl" onClose={() => setEditing(null)}>
+          <form onSubmit={handleEdit}>
+            <ServiceFormLayout aside={<ServiceRecordAside service={editing} />}>
+              <ServiceFormFields
+                value={editForm}
+                onChange={(patch) => setEditForm({ ...editForm, ...patch })}
+                trucks={trucks}
+                trailers={trailers}
+              />
+            </ServiceFormLayout>
+
             <ModalActions loading={loading} onCancel={() => setEditing(null)} submitLabel="Save Changes" />
           </form>
         </Modal>
       )}
+
     </div>
   );
 }

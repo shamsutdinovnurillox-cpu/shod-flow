@@ -68,7 +68,7 @@ export function DriverProfileView({ driver, documents }: { driver: DriverProfile
       <div className="flex flex-wrap items-center gap-4">
         <div className="p-3 bg-emerald-100 text-emerald-600 rounded-xl"><User className="h-8 w-8" /></div>
         <div>
-          <h1 className="text-3xl font-bold text-fg">{driver.firstName} {driver.lastName}</h1>
+          <h1 className="text-3xl font-semibold tracking-tight text-fg">{driver.firstName} {driver.lastName}</h1>
           <p className="text-muted">Hired {new Date(driver.hireDate).toLocaleDateString()} · DOB {new Date(driver.dob).toLocaleDateString()}</p>
         </div>
         <span className={`ml-2 inline-flex rounded-full px-3 py-1 text-xs font-semibold ${driver.status === "ACTIVE" ? "bg-green-50 text-green-700" : "bg-surface-2 text-muted"}`}>
@@ -79,11 +79,11 @@ export function DriverProfileView({ driver, documents }: { driver: DriverProfile
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <InfoCard icon={CreditCard} color="bg-blue-100 text-blue-600" label={`CDL (${driver.cdlState})`} value={driver.cdlNumber} />
-        <div className="bg-surface rounded-xl border border-border p-5 shadow-sm">
+        <div className="card p-5">
           <p className="text-xs font-medium text-muted">CDL Expiry</p>
           <p className={`text-lg font-bold ${cdl.cls}`}>{cdl.str} {cdl.tag && <span className="text-xs">({cdl.tag})</span>}</p>
         </div>
-        <div className="bg-surface rounded-xl border border-border p-5 shadow-sm">
+        <div className="card p-5">
           <p className="text-xs font-medium text-muted">Medical Card Expiry</p>
           <p className={`text-lg font-bold ${med.cls}`}>{med.str} {med.tag && <span className="text-xs">({med.tag})</span>}</p>
         </div>

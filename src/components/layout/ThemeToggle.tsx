@@ -28,7 +28,7 @@ export function ThemeToggle() {
       onClick={toggle}
       aria-label={dark ? "Yorug' rejim" : "Tungi rejim"}
       title={dark ? "Yorug' rejimga o'tish" : "Tungi rejimga o'tish"}
-      className="flex h-9 w-9 items-center justify-center rounded-lg border border-border text-muted transition-colors hover:bg-surface-2 hover:text-fg"
+      className="btn btn-ghost btn-icon"
     >
       {dark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
     </button>

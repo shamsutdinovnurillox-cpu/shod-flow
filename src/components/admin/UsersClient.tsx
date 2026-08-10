@@ -71,30 +71,30 @@ export function UsersClient({ users, currentUserId }: { users: UserRow[]; curren
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-fg">Users</h1>
+          <h1 className="text-2xl font-semibold tracking-tight text-fg">Users</h1>
           <p className="text-sm text-muted mt-0.5">Create, assign roles, deactivate, and reset passwords.</p>
         </div>
         <button
           onClick={() => { setAddForm({ name: "", email: "", password: "", role: "FLEET_USER", department: "FLEET" }); setModal("add"); }}
-          className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 transition-colors"
+          className="btn btn-primary"
         >
           <UserPlus className="h-4 w-4" />
           Add User
         </button>
       </div>
 
-      <div className="rounded-xl border border-border bg-surface shadow-sm overflow-hidden">
+      <div className="card overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm text-muted">
-            <thead className="bg-surface-2 text-fg">
+            <thead className="border-b border-border bg-surface-2/70">
               <tr>
-                <th className="px-6 py-4 font-medium">Name</th>
-                <th className="px-6 py-4 font-medium">Email</th>
-                <th className="px-6 py-4 font-medium">Role</th>
-                <th className="px-6 py-4 font-medium">Department</th>
-                <th className="px-6 py-4 font-medium">2FA</th>
-                <th className="px-6 py-4 font-medium">Status</th>
-                <th className="px-6 py-4 font-medium text-right">Actions</th>
+                <th className="whitespace-nowrap px-5 py-3 text-xs font-semibold uppercase tracking-wide text-muted sm:px-6">Name</th>
+                <th className="whitespace-nowrap px-5 py-3 text-xs font-semibold uppercase tracking-wide text-muted sm:px-6">Email</th>
+                <th className="whitespace-nowrap px-5 py-3 text-xs font-semibold uppercase tracking-wide text-muted sm:px-6">Role</th>
+                <th className="whitespace-nowrap px-5 py-3 text-xs font-semibold uppercase tracking-wide text-muted sm:px-6">Department</th>
+                <th className="whitespace-nowrap px-5 py-3 text-xs font-semibold uppercase tracking-wide text-muted sm:px-6">2FA</th>
+                <th className="whitespace-nowrap px-5 py-3 text-xs font-semibold uppercase tracking-wide text-muted sm:px-6">Status</th>
+                <th className="whitespace-nowrap px-5 py-3 text-xs font-semibold uppercase tracking-wide text-muted sm:px-6 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
@@ -105,18 +105,18 @@ export function UsersClient({ users, currentUserId }: { users: UserRow[]; curren
                   const isSelf = u.id === currentUserId;
                   return (
                     <tr key={u.id} className="hover:bg-surface-2 transition-colors">
-                      <td className="px-6 py-4 font-medium text-fg">
+                      <td className="px-5 py-3.5 sm:px-6 font-medium text-fg">
                         {u.name}
                         {isSelf && <span className="ml-2 rounded bg-surface-2 px-1.5 py-0.5 text-xs text-muted">you</span>}
                       </td>
-                      <td className="px-6 py-4">{u.email}</td>
-                      <td className="px-6 py-4">
+                      <td className="px-5 py-3.5 sm:px-6">{u.email}</td>
+                      <td className="px-5 py-3.5 sm:px-6">
                         <span className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${ROLE_STYLES[u.role] ?? "bg-surface-2 text-muted"}`}>
                           {u.role}
                         </span>
                       </td>
-                      <td className="px-6 py-4">{u.department}</td>
-                      <td className="px-6 py-4">
+                      <td className="px-5 py-3.5 sm:px-6">{u.department}</td>
+                      <td className="px-5 py-3.5 sm:px-6">
                         {u.mfaEnabled ? (
                           <span className="inline-flex items-center gap-1 rounded-full bg-green-50 px-2 py-1 text-xs font-semibold text-green-700">
                             <Smartphone className="h-3 w-3" /> On
@@ -125,13 +125,13 @@ export function UsersClient({ users, currentUserId }: { users: UserRow[]; curren
                           <span className="text-xs text-faint">Off</span>
                         )}
                       </td>
-                      <td className="px-6 py-4">
+                      <td className="px-5 py-3.5 sm:px-6">
                         <span className={`inline-flex items-center gap-1.5 rounded-full px-2 py-1 text-xs font-semibold ${u.isActive ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"}`}>
                           <span className={`h-1.5 w-1.5 rounded-full ${u.isActive ? "bg-green-500" : "bg-red-500"}`} />
                           {u.isActive ? "Active" : "Inactive"}
                         </span>
                       </td>
-                      <td className="px-6 py-4">
+                      <td className="px-5 py-3.5 sm:px-6">
                         <div className="flex items-center justify-end gap-1">
                           <button onClick={() => openRole(u)} title="Edit role" className="rounded-md p-1.5 text-muted hover:bg-surface-2 hover:text-fg">
                             <ShieldCheck className="h-4 w-4" />

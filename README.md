@@ -7,22 +7,25 @@ SHOD Express uchun ichki operatsion tizim: Fleet (trucks, trailers, services, ex
 ## Ishga tushirish (lokal)
 
 ```bash
-# 1. PostgreSQL (masalan Homebrew bilan)
-brew services start postgresql@17
-createdb shodflow
+# 1. PostgreSQL 17 (Docker) — prod'dagi Neon bilan bir xil versiya
+docker compose up -d
 
 # 2. Muhit o'zgaruvchilari
 cp .env.example .env
-# .env ichida DATABASE_URL va AUTH_SECRET ni to'ldiring (npx auth secret)
+# DATABASE_URL allaqachon lokal Docker bazasiga ishora qiladi.
+# AUTH_SECRET ni to'ldiring: npx auth secret
 
 # 3. Bog'liqliklar + baza + demo ma'lumot
 npm install
-npx prisma migrate dev
+npx prisma migrate deploy
 npm run db:seed
 
 # 4. Dev server
 npm run dev   # http://localhost:3000
 ```
+
+> Baza hostda **5433** portida turadi (5432 ni boshqa loyihalar band qilishi mumkin).
+> `docker compose down` — to'xtatadi, ma'lumot saqlanadi; `down -v` — ma'lumotni ham o'chiradi.
 
 Seed 3 ta demo foydalanuvchi yaratadi (parol: `password123`, faqat dev uchun):
 
@@ -43,6 +46,8 @@ Seed 3 ta demo foydalanuvchi yaratadi (parol: `password123`, faqat dev uchun):
 | `npm run db:migrate` | Migratsiyalarni deploy qilish (prod) |
 | `npm run db:seed` | Demo ma'lumot |
 | `npm run db:reset` | Bazani qayta yaratish (dev) |
+| `docker compose up -d` | Lokal PostgreSQL'ni ishga tushirish |
+| `docker compose down` | Lokal PostgreSQL'ni to'xtatish |
 
 ## Muhit o'zgaruvchilari
 

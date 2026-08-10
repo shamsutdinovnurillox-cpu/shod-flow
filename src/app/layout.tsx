@@ -17,8 +17,12 @@ export const metadata: Metadata = {
   description: "SHOD Express uchun ichki Fleet & Safety operatsion tizimi.",
 };
 
-// Birinchi bo'yashdan oldin temani qo'llaydi (flash bo'lmasligi uchun).
-const themeScript = `(function(){try{var t=localStorage.getItem('theme');var d=t?t==='dark':window.matchMedia('(prefers-color-scheme: dark)').matches;if(d)document.documentElement.classList.add('dark');}catch(e){}})();`;
+// Birinchi bo'yashdan oldin tema va yon panel holatini qo'llaydi — shunda
+// sahifa yuklanishida "chaqnash" va panel kengligi sakrashi bo'lmaydi.
+const bootScript = `(function(){try{var e=document.documentElement;
+var t=localStorage.getItem('theme');var d=t?t==='dark':window.matchMedia('(prefers-color-scheme: dark)').matches;if(d)e.classList.add('dark');
+e.dataset.sidebar=localStorage.getItem('sidebar')==='collapsed'?'collapsed':'expanded';
+}catch(e){}})();`;
 
 export default function RootLayout({
   children,
@@ -32,7 +36,7 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <head>
-        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+        <script dangerouslySetInnerHTML={{ __html: bootScript }} />
       </head>
       <body className="min-h-full flex flex-col">{children}</body>
     </html>

@@ -40,12 +40,12 @@ export function AccountClient({
   return (
     <div className="max-w-2xl space-y-8">
       <div>
-        <h1 className="text-2xl font-semibold text-fg">Account settings</h1>
+        <h1 className="text-2xl font-semibold tracking-tight text-fg">Account settings</h1>
         <p className="text-sm text-muted mt-0.5">Manage your profile and password.</p>
       </div>
 
       {/* Profil ma'lumoti */}
-      <div className="rounded-xl border border-border bg-surface p-6 shadow-sm">
+      <div className="card p-6">
         <h2 className="text-lg font-bold text-fg mb-4">Profile</h2>
         <dl className="space-y-3">
           <Row k="Name" v={user.name ?? "—"} />
@@ -56,7 +56,7 @@ export function AccountClient({
       </div>
 
       {/* Parol o'zgartirish */}
-      <div className="rounded-xl border border-border bg-surface p-6 shadow-sm">
+      <div className="card p-6">
         <div className="flex items-center gap-2 mb-4">
           <KeyRound className="h-5 w-5 text-muted" />
           <h2 className="text-lg font-bold text-fg">Change password</h2>
@@ -64,18 +64,18 @@ export function AccountClient({
 
         <form onSubmit={submit} className="space-y-4">
           <div>
-            <label className="mb-1 block text-sm font-medium text-fg">Current password</label>
+            <label className="mb-1.5 block text-sm font-medium text-fg">Current password</label>
             <input required type="password" autoComplete="current-password" value={form.currentPassword}
               onChange={(e) => setForm({ ...form, currentPassword: e.target.value })} className="modal-input !mt-0" />
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="mb-1 block text-sm font-medium text-fg">New password</label>
+              <label className="mb-1.5 block text-sm font-medium text-fg">New password</label>
               <input required type="password" autoComplete="new-password" minLength={8} value={form.newPassword}
                 onChange={(e) => setForm({ ...form, newPassword: e.target.value })} className="modal-input !mt-0" placeholder="min 8 belgi" />
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-fg">Confirm new password</label>
+              <label className="mb-1.5 block text-sm font-medium text-fg">Confirm new password</label>
               <input required type="password" autoComplete="new-password" value={form.confirm}
                 onChange={(e) => setForm({ ...form, confirm: e.target.value })} className="modal-input !mt-0" />
             </div>
@@ -162,7 +162,7 @@ function MfaCard({ enabled }: { enabled: boolean }) {
   };
 
   return (
-    <div className="rounded-xl border border-border bg-surface p-6 shadow-sm">
+    <div className="card p-6">
       <div className="flex items-center justify-between gap-3 mb-1">
         <div className="flex items-center gap-2">
           <Smartphone className="h-5 w-5 text-muted" />

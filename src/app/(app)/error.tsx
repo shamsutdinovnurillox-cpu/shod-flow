@@ -16,7 +16,7 @@ export default function AppError({ error, reset }: { error: Error & { digest?: s
       </p>
       <button
         onClick={reset}
-        className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+        className="flex items-center gap-2 btn btn-primary"
       >
         <RotateCw className="h-4 w-4" /> Qayta urinish
       </button>

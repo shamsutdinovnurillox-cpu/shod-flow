@@ -79,7 +79,7 @@ export function InspectionDetailClient({ inspection, trucks, documents, logs }: 
       <div className="flex flex-wrap items-center gap-4">
         <div className="p-3 bg-yellow-100 text-yellow-600 rounded-xl"><ClipboardCheck className="h-8 w-8" /></div>
         <div>
-          <h1 className="text-3xl font-bold text-fg">Inspection — {new Date(inspection.date).toLocaleDateString()}</h1>
+          <h1 className="text-3xl font-semibold tracking-tight text-fg">Inspection — {new Date(inspection.date).toLocaleDateString()}</h1>
           <p className="text-muted">{inspection.state} · Level {inspection.level}</p>
         </div>
         <span className={`ml-2 inline-flex rounded-full px-3 py-1 text-xs font-semibold ${STATUS_STYLES[inspection.status] ?? "bg-surface-2 text-muted"}`}>
@@ -93,7 +93,7 @@ export function InspectionDetailClient({ inspection, trucks, documents, logs }: 
           >
             {ALL_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
           </select>
-          <button onClick={() => setEditOpen(true)} className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-fg hover:bg-surface-2">Edit</button>
+          <button onClick={() => setEditOpen(true)} className="btn btn-secondary">Edit</button>
         </div>
       </div>
 
@@ -134,7 +134,7 @@ export function InspectionDetailClient({ inspection, trucks, documents, logs }: 
         <Modal title="Edit Inspection" onClose={() => setEditOpen(false)}>
           <form
             onSubmit={(e) => { e.preventDefault(); run(() => updateInspection(inspection.id, editForm), "Saqlashda xatolik."); }}
-            className="space-y-4 max-h-[70vh] overflow-y-auto pr-1"
+            className="space-y-4"
           >
             <div className="grid grid-cols-2 gap-4">
               <Field label="Date">

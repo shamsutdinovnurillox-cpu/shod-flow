@@ -19,11 +19,7 @@ const FIELD_LABELS: Record<string, string> = {
   licensePlate: "Davlat raqami",
   trailerNumber: "Trailer raqami",
   cdlNumber: "CDL raqami",
-  motiveGateway: "Motive gateway",
-  camera: "Kamera",
-  prePass: "PrePass",
-  eldPt30: "ELD PT30",
-  tablet: "Planshet",
+  serialNumber: "Qurilma seriya raqami",
   email: "Email",
 };
 

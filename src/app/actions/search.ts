@@ -6,7 +6,7 @@ import { requireUser } from "@/lib/auth-guard";
 // Global qidiruv (PRD 3): unit/trailer raqami, VIN, plate, CDL, driver ismi,
 // claim raqami, load raqami, hujjat nomi, qurilma raqamlari bo'yicha.
 export interface SearchHit {
-  kind: "Truck" | "Trailer" | "Driver" | "Accident" | "CargoClaim" | "Inspection" | "Document";
+  kind: "Truck" | "Trailer" | "Driver" | "Accident" | "CargoClaim" | "Inspection" | "Document" | "Device";
   id: string;
   title: string;
   subtitle: string;
@@ -19,15 +19,9 @@ export async function globalSearch(query: string): Promise<SearchHit[]> {
   if (q.length < 2) return [];
   const like = { contains: q, mode: "insensitive" as const };
 
-  const [trucks, trailers, drivers, accidents, claims, inspections, documents] = await Promise.all([
+  const [trucks, trailers, drivers, accidents, claims, inspections, documents, devices] = await Promise.all([
     prisma.truck.findMany({
-      where: {
-        OR: [
-          { unitNumber: like }, { vin: like }, { licensePlate: like },
-          // Qurilma raqamlari (PRD 4.2 devices)
-          { motiveGateway: like }, { camera: like }, { prePass: like }, { eldPt30: like }, { tablet: like },
-        ],
-      },
+      where: { OR: [{ unitNumber: like }, { vin: like }, { licensePlate: like }] },
       take: 8,
     }),
     prisma.trailer.findMany({
@@ -57,6 +51,12 @@ export async function globalSearch(query: string): Promise<SearchHit[]> {
       where: { OR: [{ type: like }, { entityId: like }, { fileName: like }] },
       take: 8,
     }),
+    // Qurilma nomi / raqami (PRD 4.2 devices)
+    prisma.device.findMany({
+      where: { OR: [{ name: like }, { vin: like }, { notes: like }] },
+      include: { truck: true },
+      take: 8,
+    }),
   ]);
 
   const hits: SearchHit[] = [];
@@ -67,6 +67,7 @@ export async function globalSearch(query: string): Promise<SearchHit[]> {
   for (const c of claims) hits.push({ kind: "CargoClaim", id: c.id, title: c.claimNumber || c.loadNumber, subtitle: `${c.driver.firstName} ${c.driver.lastName} · ${c.status}`, href: `/safety/cargo-claims/${c.id}` });
   for (const i of inspections) hits.push({ kind: "Inspection", id: i.id, title: `Inspection ${i.state}`, subtitle: `${i.driver.firstName} ${i.driver.lastName} · Level ${i.level}`, href: `/safety/inspections/${i.id}` });
   for (const d of documents) hits.push({ kind: "Document", id: d.id, title: d.fileName ?? d.type, subtitle: `${d.type} · ${d.entityType}`, href: d.fileUrl });
+  for (const d of devices) hits.push({ kind: "Device", id: d.id, title: d.name, subtitle: d.truck ? `${d.truck.unitNumber} · ${d.condition}` : `In stock · ${d.condition}`, href: d.truck ? `/fleet/trucks/${d.truck.id}` : "/fleet/devices" });
 
   return hits;
 }

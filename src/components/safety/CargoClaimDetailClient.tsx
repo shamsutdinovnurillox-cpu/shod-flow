@@ -70,7 +70,7 @@ export function CargoClaimDetailClient({ claim, trucks, documents, logs }: {
       <div className="flex flex-wrap items-center gap-4">
         <div className="p-3 bg-orange-100 text-orange-600 rounded-xl"><PackageX className="h-8 w-8" /></div>
         <div>
-          <h1 className="text-3xl font-bold text-fg">Claim {claim.claimNumber ?? `#${claim.loadNumber}`}</h1>
+          <h1 className="text-3xl font-semibold tracking-tight text-fg">Claim {claim.claimNumber ?? `#${claim.loadNumber}`}</h1>
           <p className="text-muted">Loss date {new Date(claim.date).toLocaleDateString()} · {claim.location}</p>
         </div>
         <span className={`ml-2 inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
@@ -79,7 +79,7 @@ export function CargoClaimDetailClient({ claim, trucks, documents, logs }: {
           {claim.status}
         </span>
         <div className="ml-auto flex gap-3">
-          <button onClick={() => setEditOpen(true)} className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-fg hover:bg-surface-2">Edit</button>
+          <button onClick={() => setEditOpen(true)} className="btn btn-secondary">Edit</button>
           <button onClick={toggleStatus} className={`rounded-lg px-4 py-2 text-sm font-medium text-white ${
             claim.status === "PENDING" ? "bg-green-600 hover:bg-green-700" : "bg-yellow-600 hover:bg-yellow-700"
           }`}>
@@ -126,7 +126,7 @@ export function CargoClaimDetailClient({ claim, trucks, documents, logs }: {
         <Modal title="Edit Cargo Claim" onClose={() => setEditOpen(false)}>
           <form
             onSubmit={(e) => { e.preventDefault(); run(() => updateCargoClaim(claim.id, editForm), "Saqlashda xatolik."); }}
-            className="space-y-4 max-h-[70vh] overflow-y-auto pr-1"
+            className="space-y-4"
           >
             <div className="grid grid-cols-2 gap-4">
               <Field label="Loss Date">

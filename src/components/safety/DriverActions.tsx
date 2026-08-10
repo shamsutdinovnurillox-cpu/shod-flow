@@ -3,9 +3,10 @@
 import { showError } from "@/components/ui/toast";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { updateDriver, terminateDriver, reactivateDriver } from "@/app/actions/safety";
+import { updateDriver, terminateDriver, setDriverStatus } from "@/app/actions/safety";
 import type { Driver } from "@/types/models";
 import { Modal, Field, ModalActions } from "@/components/ui/profile";
+import { DRIVER_TYPE_OPTIONS } from "@/components/safety/DriversClient";
 
 const toDateInput = (d: Date | string) => new Date(d).toISOString().split("T")[0];
 
@@ -25,6 +26,7 @@ export function DriverActions({ driver }: { driver: Driver }) {
     cdlExpiryDate: toDateInput(driver.cdlExpiryDate),
     medCardExpiryDate: toDateInput(driver.medCardExpiryDate),
     hireDate: toDateInput(driver.hireDate),
+    driverType: driver.driverType,
     notes: driver.notes ?? "",
   });
   const [terminationDate, setTerminationDate] = useState(toDateInput(new Date()));
@@ -42,25 +44,29 @@ export function DriverActions({ driver }: { driver: Driver }) {
     }
   };
 
-  const onReactivate = () => {
-    if (!confirm("Reactivate this driver?")) return;
-    run(() => reactivateDriver(driver.id), "Amaliyot bajarilmadi.");
+  const changeStatus = (status: string, label: string) => {
+    if (!confirm(`${label}?`)) return;
+    run(() => setDriverStatus(driver.id, status), "Amaliyot bajarilmadi.");
   };
 
   return (
-    <div className="ml-auto flex gap-3">
-      <button onClick={() => setModal("edit")} className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-fg hover:bg-surface-2">Edit</button>
-      {driver.status === "ACTIVE" ? (
+    <div className="ml-auto flex flex-wrap gap-3">
+      <button onClick={() => setModal("edit")} className="btn btn-secondary">Edit</button>
+      {driver.status !== "ACTIVE" && (
+        <button onClick={() => changeStatus("ACTIVE", "Set this driver back to Active")} className="rounded-lg border border-green-200 px-4 py-2 text-sm font-medium text-green-600 hover:bg-green-50">Set Active</button>
+      )}
+      {driver.status !== "ON_LEAVE" && driver.status !== "TERMINATED" && (
+        <button onClick={() => changeStatus("ON_LEAVE", "Put this driver on leave")} className="rounded-lg border border-amber-200 px-4 py-2 text-sm font-medium text-amber-600 hover:bg-amber-50">On Leave</button>
+      )}
+      {driver.status !== "TERMINATED" && (
         <button onClick={() => setModal("terminate")} className="rounded-lg border border-red-200 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50">Terminate</button>
-      ) : (
-        <button onClick={onReactivate} className="rounded-lg border border-green-200 px-4 py-2 text-sm font-medium text-green-600 hover:bg-green-50">Reactivate</button>
       )}
 
       {modal === "edit" && (
         <Modal title="Edit Driver" onClose={() => setModal(null)}>
           <form
             onSubmit={(e) => { e.preventDefault(); run(() => updateDriver(driver.id, editForm), "Saqlashda xatolik."); }}
-            className="space-y-4 max-h-[70vh] overflow-y-auto pr-1"
+            className="space-y-4"
           >
             <div className="grid grid-cols-2 gap-4">
               <Field label="First Name">
@@ -74,6 +80,11 @@ export function DriverActions({ driver }: { driver: Driver }) {
               </Field>
               <Field label="Hire Date">
                 <input required type="date" value={editForm.hireDate} onChange={(e) => setEditForm({ ...editForm, hireDate: e.target.value })} className="modal-input" />
+              </Field>
+              <Field label="Driver Type">
+                <select value={editForm.driverType} onChange={(e) => setEditForm({ ...editForm, driverType: e.target.value as typeof editForm.driverType })} className="modal-input">
+                  {DRIVER_TYPE_OPTIONS.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
+                </select>
               </Field>
               <Field label="CDL Number">
                 <input required value={editForm.cdlNumber} onChange={(e) => setEditForm({ ...editForm, cdlNumber: e.target.value })} className="modal-input" />

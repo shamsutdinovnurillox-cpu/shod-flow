@@ -12,6 +12,19 @@ export async function getAuditLogs() {
   });
 }
 
+/**
+ * Dashboard'dagi "Activity" lentasi uchun oxirgi o'zgarishlar.
+ * getAuditLogs'dan farqi: admin talab qilinmaydi va hajmi kichik.
+ */
+export async function getRecentActivity(take = 8) {
+  await requireUser();
+  return prisma.auditLog.findMany({
+    include: { user: { select: { name: true, email: true } } },
+    orderBy: { timestamp: "desc" },
+    take,
+  });
+}
+
 // Barcha dashboard'lar uchun umumiy KPI to'plami (real ma'lumotdan).
 export async function getDashboardStats() {
   await requireUser();

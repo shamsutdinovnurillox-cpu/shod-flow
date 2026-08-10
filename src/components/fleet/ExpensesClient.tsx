@@ -6,12 +6,15 @@ import { createExpense, updateExpense, setExpensePaymentStatus } from "@/app/act
 import { Plus } from "lucide-react";
 import type { ExpenseWithUnit, Truck, Trailer } from "@/types/models";
 import { Modal, Field, ModalActions, money } from "@/components/ui/profile";
+import { useOpenOnNewParam } from "@/components/ui/use-new-param";
 
 const CATEGORIES = ["MAINTENANCE", "REPAIR", "PARTS", "SERVICE", "PARKING", "WASH", "EQUIPMENT", "REGISTRATION", "PERMITS", "OTHER"];
 
 export function ExpensesClient({ initialExpenses, trucks, trailers }: { initialExpenses: ExpenseWithUnit[], trucks: Truck[], trailers: Trailer[] }) {
   const [expenses, setExpenses] = useState(initialExpenses);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  // Dashboard tezkor amali (`?new=1`) bilan kelinganda modal o'zi ochiladi.
+  useOpenOnNewParam(() => setIsModalOpen(true));
   const [editing, setEditing] = useState<ExpenseWithUnit | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -113,10 +116,10 @@ export function ExpensesClient({ initialExpenses, trucks, trailers }: { initialE
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold text-fg">Expenses</h1>
+        <h1 className="text-2xl font-semibold tracking-tight text-fg">Expenses</h1>
         <button
           onClick={() => setIsModalOpen(true)}
-          className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 transition-all"
+          className="btn btn-primary"
         >
           <Plus className="h-4 w-4" />
           Add Expense
@@ -126,17 +129,17 @@ export function ExpensesClient({ initialExpenses, trucks, trailers }: { initialE
       {/* Filtrlar + jamlamalar (PRD 4.6) */}
       <div className="flex flex-wrap items-end gap-3">
         <div>
-          <label className="block text-xs font-medium text-muted mb-1">From</label>
+          <label className="mb-1.5 block text-xs font-medium text-muted">From</label>
           <input type="date" value={filters.from} onChange={(e) => setFilters({ ...filters, from: e.target.value })}
             className="rounded-lg border border-border px-3 py-2 text-sm focus:border-blue-500 focus:outline-none" />
         </div>
         <div>
-          <label className="block text-xs font-medium text-muted mb-1">To</label>
+          <label className="mb-1.5 block text-xs font-medium text-muted">To</label>
           <input type="date" value={filters.to} onChange={(e) => setFilters({ ...filters, to: e.target.value })}
             className="rounded-lg border border-border px-3 py-2 text-sm focus:border-blue-500 focus:outline-none" />
         </div>
         <div>
-          <label className="block text-xs font-medium text-muted mb-1">Category</label>
+          <label className="mb-1.5 block text-xs font-medium text-muted">Category</label>
           <select value={filters.category} onChange={(e) => setFilters({ ...filters, category: e.target.value })}
             className="rounded-lg border border-border px-3 py-2 text-sm focus:border-blue-500 focus:outline-none">
             <option value="ALL">All</option>
@@ -144,7 +147,7 @@ export function ExpensesClient({ initialExpenses, trucks, trailers }: { initialE
           </select>
         </div>
         <div>
-          <label className="block text-xs font-medium text-muted mb-1">Payment</label>
+          <label className="mb-1.5 block text-xs font-medium text-muted">Payment</label>
           <select value={filters.status} onChange={(e) => setFilters({ ...filters, status: e.target.value })}
             className="rounded-lg border border-border px-3 py-2 text-sm focus:border-blue-500 focus:outline-none">
             <option value="ALL">All</option>
@@ -165,18 +168,18 @@ export function ExpensesClient({ initialExpenses, trucks, trailers }: { initialE
         </div>
       </div>
 
-      <div className="rounded-xl border border-border bg-surface shadow-sm overflow-hidden">
+      <div className="card overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm text-muted">
-            <thead className="bg-surface-2 text-fg">
+            <thead className="border-b border-border bg-surface-2/70">
               <tr>
-                <th className="px-6 py-4 font-medium">Type/Unit</th>
-                <th className="px-6 py-4 font-medium">Date</th>
-                <th className="px-6 py-4 font-medium">Category</th>
-                <th className="px-6 py-4 font-medium">Vendor</th>
-                <th className="px-6 py-4 font-medium">Amount</th>
-                <th className="px-6 py-4 font-medium">Status</th>
-                <th className="px-6 py-4 font-medium">Actions</th>
+                <th className="whitespace-nowrap px-5 py-3 text-xs font-semibold uppercase tracking-wide text-muted sm:px-6">Type/Unit</th>
+                <th className="whitespace-nowrap px-5 py-3 text-xs font-semibold uppercase tracking-wide text-muted sm:px-6">Date</th>
+                <th className="whitespace-nowrap px-5 py-3 text-xs font-semibold uppercase tracking-wide text-muted sm:px-6">Category</th>
+                <th className="whitespace-nowrap px-5 py-3 text-xs font-semibold uppercase tracking-wide text-muted sm:px-6">Vendor</th>
+                <th className="whitespace-nowrap px-5 py-3 text-xs font-semibold uppercase tracking-wide text-muted sm:px-6">Amount</th>
+                <th className="whitespace-nowrap px-5 py-3 text-xs font-semibold uppercase tracking-wide text-muted sm:px-6">Status</th>
+                <th className="whitespace-nowrap px-5 py-3 text-xs font-semibold uppercase tracking-wide text-muted sm:px-6">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
@@ -189,23 +192,23 @@ export function ExpensesClient({ initialExpenses, trucks, trailers }: { initialE
               ) : (
                 visible.map((expense) => (
                   <tr key={expense.id} className="hover:bg-surface-2 transition-colors">
-                    <td className="px-6 py-4 font-medium text-fg">
+                    <td className="px-5 py-3.5 sm:px-6 font-medium text-fg">
                       {expense.entityType === "FLEET" ? "General Fleet" : 
                        expense.entityType === "TRUCK" ? `Truck: ${expense.truck?.unitNumber}` : 
                        `Trailer: ${expense.trailer?.trailerNumber}`}
                     </td>
-                    <td className="px-6 py-4">{new Date(expense.date).toLocaleDateString()}</td>
-                    <td className="px-6 py-4">{expense.category}</td>
-                    <td className="px-6 py-4">{expense.vendor}</td>
-                    <td className="px-6 py-4 font-medium text-fg">${expense.amount}</td>
-                    <td className="px-6 py-4">
+                    <td className="px-5 py-3.5 sm:px-6">{new Date(expense.date).toLocaleDateString()}</td>
+                    <td className="px-5 py-3.5 sm:px-6">{expense.category}</td>
+                    <td className="px-5 py-3.5 sm:px-6">{expense.vendor}</td>
+                    <td className="px-5 py-3.5 sm:px-6 font-medium text-fg">${expense.amount}</td>
+                    <td className="px-5 py-3.5 sm:px-6">
                       <span className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${
                         expense.paymentStatus === "PAID" ? "bg-green-50 text-green-700" : "bg-yellow-50 text-yellow-700"
                       }`}>
                         {expense.paymentStatus}
                       </span>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-5 py-3.5 sm:px-6">
                       <div className="flex gap-3 text-sm font-medium">
                         <button onClick={() => openEdit(expense)} className="text-blue-600 hover:underline">Edit</button>
                         <button onClick={() => togglePaid(expense)} className={expense.paymentStatus === "PAID" ? "text-yellow-600 hover:underline" : "text-green-600 hover:underline"}>
@@ -252,14 +255,12 @@ export function ExpensesClient({ initialExpenses, trucks, trailers }: { initialE
       )}
 
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-          <div className="w-full max-w-lg rounded-2xl bg-surface p-6 shadow-2xl">
-            <h2 className="text-xl font-bold text-fg mb-4">Add Expense</h2>
+        <Modal title="Add Expense" size="lg" onClose={() => setIsModalOpen(false)}>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-fg">Applies To</label>
-                  <select className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                  <label className="mb-1.5 block text-sm font-medium text-fg">Applies To</label>
+                  <select className="modal-input"
                     value={formData.entityType} onChange={(e) => setFormData({...formData, entityType: e.target.value, unitId: ""})}>
                     <option value="TRUCK">Truck</option>
                     <option value="TRAILER">Trailer</option>
@@ -269,8 +270,8 @@ export function ExpensesClient({ initialExpenses, trucks, trailers }: { initialE
                 
                 {formData.entityType !== "FLEET" && (
                   <div>
-                    <label className="block text-sm font-medium text-fg">Unit</label>
-                    <select required className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                    <label className="mb-1.5 block text-sm font-medium text-fg">Unit</label>
+                    <select required className="modal-input"
                       value={formData.unitId} onChange={(e) => setFormData({...formData, unitId: e.target.value})}>
                       <option value="">Select Unit</option>
                       {formData.entityType === "TRUCK" ? (
@@ -283,8 +284,8 @@ export function ExpensesClient({ initialExpenses, trucks, trailers }: { initialE
                 )}
                 
                 <div className={formData.entityType === "FLEET" ? "col-span-2" : ""}>
-                  <label className="block text-sm font-medium text-fg">Category</label>
-                  <select className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                  <label className="mb-1.5 block text-sm font-medium text-fg">Category</label>
+                  <select className="modal-input"
                     value={formData.category} onChange={(e) => setFormData({...formData, category: e.target.value})}>
                     <option value="MAINTENANCE">Maintenance</option>
                     <option value="REPAIR">Repair</option>
@@ -300,41 +301,40 @@ export function ExpensesClient({ initialExpenses, trucks, trailers }: { initialE
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-fg">Date</label>
-                  <input required type="date" className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-blue-500 focus:outline-none" 
+                  <label className="mb-1.5 block text-sm font-medium text-fg">Date</label>
+                  <input required type="date" className="modal-input" 
                     value={formData.date} onChange={(e) => setFormData({...formData, date: e.target.value})} />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-fg">Vendor</label>
-                  <input required className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-blue-500 focus:outline-none" 
+                  <label className="mb-1.5 block text-sm font-medium text-fg">Vendor</label>
+                  <input required className="modal-input" 
                     value={formData.vendor} onChange={(e) => setFormData({...formData, vendor: e.target.value})} />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-fg">Amount ($)</label>
-                  <input required type="number" step="0.01" className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-blue-500 focus:outline-none" 
+                  <label className="mb-1.5 block text-sm font-medium text-fg">Amount ($)</label>
+                  <input required type="number" step="0.01" className="modal-input" 
                     value={formData.amount} onChange={(e) => setFormData({...formData, amount: e.target.value})} />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-fg">Payment Method</label>
-                  <input className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-blue-500 focus:outline-none" 
+                  <label className="mb-1.5 block text-sm font-medium text-fg">Payment Method</label>
+                  <input className="modal-input" 
                     value={formData.paymentMethod} onChange={(e) => setFormData({...formData, paymentMethod: e.target.value})} />
                 </div>
                 <div className="col-span-2">
-                  <label className="block text-sm font-medium text-fg">Description</label>
-                  <input className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-blue-500 focus:outline-none" 
+                  <label className="mb-1.5 block text-sm font-medium text-fg">Description</label>
+                  <input className="modal-input" 
                     value={formData.description} onChange={(e) => setFormData({...formData, description: e.target.value})} />
                 </div>
               </div>
               
-              <div className="mt-6 flex justify-end gap-3">
-                <button type="button" onClick={() => setIsModalOpen(false)} className="rounded-lg px-4 py-2 text-sm font-medium text-fg hover:bg-surface-2">Cancel</button>
-                <button type="submit" disabled={loading} className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50">
+              <div className="modal-footer">
+                <button type="button" onClick={() => setIsModalOpen(false)} className="btn btn-ghost">Cancel</button>
+                <button type="submit" disabled={loading} className="btn btn-primary">
                   {loading ? "Saving..." : "Save Expense"}
                 </button>
               </div>
             </form>
-          </div>
-        </div>
+        </Modal>
       )}
     </div>
   );

@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
-import { signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
+import { signIn, signOut } from "next-auth/react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Truck, LogIn, Smartphone, ArrowLeft } from "lucide-react";
 import { preAuth } from "@/app/actions/login-actions";
 
@@ -14,14 +14,22 @@ const DEMO_ACCOUNTS = [
   { label: "Safety", email: "safety@shodflow.com" },
 ];
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const isStale = searchParams.has("stale");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [token, setToken] = useState("");
   const [phase, setPhase] = useState<"credentials" | "mfa">("credentials");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  // Eskirgan sessiya bilan kelinganda cookie'ni tozalaymiz — aks holda
+  // foydalanuvchi kirgan holatda qolib, har bir sahifada shu yerga qaytadi.
+  useEffect(() => {
+    if (isStale) signOut({ redirect: false });
+  }, [isStale]);
 
   // 1-bosqich: email + parol. MFA yoqilgan bo'lsa 2-bosqichga o'tadi.
   const handleSubmit = async (e: React.FormEvent) => {
@@ -93,14 +101,20 @@ export default function LoginPage() {
       <div className="pointer-events-none absolute -bottom-40 -left-40 h-96 w-96 rounded-full bg-emerald-500/10 blur-3xl" />
 
       <div className="relative w-full max-w-md">
-        <div className="rounded-2xl border border-border bg-surface p-8 shadow-xl sm:p-10">
+        <div className="animate-slide-up rounded-2xl border border-border bg-surface p-7 shadow-[var(--shadow-xl)] sm:p-10">
           <div className="text-center">
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-emerald-500 text-white shadow-lg">
+            <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-gradient-to-br from-blue-500 to-emerald-500 text-white shadow-[var(--shadow-md)]">
               <Truck className="h-7 w-7" />
             </div>
-            <h1 className="mt-5 text-2xl font-bold tracking-tight text-fg">Shod Flow</h1>
+            <h1 className="mt-5 text-2xl font-semibold tracking-tight text-fg">Shod Flow</h1>
             <p className="mt-1 text-sm text-muted">Fleet &amp; Safety Platform</p>
           </div>
+
+          {isStale && (
+            <div className="mt-6 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-center text-sm font-medium text-amber-700">
+              Sessiyangiz muddati tugagan. Iltimos, qaytadan kiring.
+            </div>
+          )}
 
           {phase === "credentials" ? (
             <>
@@ -115,7 +129,7 @@ export default function LoginPage() {
                     type="email"
                     autoComplete="email"
                     required
-                    className="modal-input !mt-0"
+                    className="modal-input"
                     placeholder="you@shodflow.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
@@ -131,7 +145,7 @@ export default function LoginPage() {
                     type="password"
                     autoComplete="current-password"
                     required
-                    className="modal-input !mt-0"
+                    className="modal-input"
                     placeholder="••••••••"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
@@ -139,7 +153,7 @@ export default function LoginPage() {
                 </div>
 
                 {error && (
-                  <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-center text-sm font-medium text-red-600">
+                  <div className="animate-fade-in rounded-lg border border-red-200 bg-red-50 px-3 py-2.5 text-center text-sm font-medium text-red-600">
                     {error}
                   </div>
                 )}
@@ -147,7 +161,7 @@ export default function LoginPage() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="flex w-full items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-surface disabled:opacity-70"
+                  className="btn btn-primary btn-lg w-full"
                 >
                   <LogIn className="h-4 w-4" />
                   {loading ? "Signing in…" : "Sign in"}
@@ -165,7 +179,7 @@ export default function LoginPage() {
                       key={a.email}
                       type="button"
                       onClick={() => fillDemo(a.email)}
-                      className="rounded-lg border border-border bg-surface-2 px-2 py-2 text-xs font-medium text-muted transition-colors hover:border-blue-300 hover:text-blue-600"
+                      className="btn btn-secondary btn-sm justify-center hover:border-blue-300 hover:text-blue-600"
                     >
                       {a.label}
                     </button>
@@ -178,7 +192,7 @@ export default function LoginPage() {
           ) : (
             <form className="mt-8 space-y-4" onSubmit={handleMfa}>
               <div className="flex flex-col items-center text-center">
-                <div className="flex h-11 w-11 items-center justify-center rounded-full bg-blue-50 text-blue-600">
+                <div className="grid h-11 w-11 place-items-center rounded-full bg-blue-50 text-blue-600">
                   <Smartphone className="h-5 w-5" />
                 </div>
                 <p className="mt-3 text-sm text-muted">
@@ -190,14 +204,14 @@ export default function LoginPage() {
                 autoComplete="one-time-code"
                 autoFocus
                 required
-                className="modal-input !mt-0 text-center tracking-[0.5em] text-lg"
+                className="modal-input text-center text-lg tracking-[0.5em]"
                 placeholder="123456"
                 value={token}
                 onChange={(e) => setToken(e.target.value)}
               />
 
               {error && (
-                <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-center text-sm font-medium text-red-600">
+                <div className="animate-fade-in rounded-lg border border-red-200 bg-red-50 px-3 py-2.5 text-center text-sm font-medium text-red-600">
                   {error}
                 </div>
               )}
@@ -205,7 +219,7 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="flex w-full items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-700 disabled:opacity-70"
+                className="btn btn-primary btn-lg w-full"
               >
                 <LogIn className="h-4 w-4" />
                 {loading ? "Verifying…" : "Verify & sign in"}
@@ -213,7 +227,7 @@ export default function LoginPage() {
               <button
                 type="button"
                 onClick={backToCredentials}
-                className="flex w-full items-center justify-center gap-1.5 text-sm font-medium text-muted hover:text-fg"
+                className="btn btn-ghost w-full"
               >
                 <ArrowLeft className="h-4 w-4" /> Orqaga
               </button>
@@ -222,5 +236,21 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+// `useSearchParams()` sahifani client-render'ga majburlaydi; Next uni Suspense
+// chegarasida bo'lishini talab qiladi, aks holda prod build /login'da uziladi.
+export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center bg-bg">
+          <span className="h-6 w-6 animate-spin rounded-full border-2 border-border border-t-primary" />
+        </div>
+      }
+    >
+      <LoginForm />
+    </Suspense>
   );
 }

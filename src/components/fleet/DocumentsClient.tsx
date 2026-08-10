@@ -1,14 +1,18 @@
 "use client";
 
+import { Modal } from "@/components/ui/profile";
 import { showError } from "@/components/ui/toast";
 import { useState, useRef } from "react";
 import { createDocument, deleteDocument, replaceDocument } from "@/app/actions/documents";
 import { Plus, FileText, Upload, Trash2, RefreshCw } from "lucide-react";
 import type { Document } from "@/types/models";
+import { useOpenOnNewParam } from "@/components/ui/use-new-param";
 
 export function DocumentsClient({ initialDocuments }: { initialDocuments: Document[] }) {
   const [documents, setDocuments] = useState(initialDocuments);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  // Dashboard tezkor amali (`?new=1`) bilan kelinganda modal o'zi ochiladi.
+  useOpenOnNewParam(() => setIsModalOpen(true));
   const [replacing, setReplacing] = useState<Document | null>(null);
   const [loading, setLoading] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
@@ -73,10 +77,10 @@ export function DocumentsClient({ initialDocuments }: { initialDocuments: Docume
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold text-fg">Documents</h1>
+        <h1 className="text-2xl font-semibold tracking-tight text-fg">Documents</h1>
         <button
           onClick={() => setIsModalOpen(true)}
-          className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 transition-all"
+          className="btn btn-primary"
         >
           <Plus className="h-4 w-4" />
           Upload Document
@@ -149,44 +153,38 @@ export function DocumentsClient({ initialDocuments }: { initialDocuments: Docume
       </div>
 
       {replacing && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-          <div className="w-full max-w-md rounded-2xl bg-surface p-6 shadow-2xl">
-            <h2 className="text-xl font-bold text-fg mb-1">Replace Document</h2>
-            <p className="text-sm text-muted mb-4">{replacing.type} — {replacing.fileName ?? replacing.entityId}. Eski versiya tarixda saqlanadi.</p>
+        <Modal title="Replace Document" description="{replacing.type} — {replacing.fileName ?? replacing.entityId}. Eski versiya tarixda saqlanadi." size="md" onClose={() => setReplacing(null)}>
             <form ref={replaceFormRef} onSubmit={handleReplace} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-fg">New File</label>
-                <input name="file" type="file" required className="mt-1 block w-full text-sm text-muted file:mr-3 file:rounded-lg file:border-0 file:bg-blue-50 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-blue-700 hover:file:bg-blue-100" />
+                <label className="mb-1.5 block text-sm font-medium text-fg">New File</label>
+                <input name="file" type="file" required className="block w-full text-sm text-muted file:mr-3 file:cursor-pointer file:rounded-lg file:border-0 file:bg-primary-soft file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-primary-soft-fg hover:file:brightness-95" />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-fg">Issue Date</label>
-                  <input type="date" name="issueDate" className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-blue-500 focus:outline-none" />
+                  <label className="mb-1.5 block text-sm font-medium text-fg">Issue Date</label>
+                  <input type="date" name="issueDate" className="modal-input" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-fg">Expiry Date</label>
-                  <input type="date" name="expiryDate" className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-blue-500 focus:outline-none" />
+                  <label className="mb-1.5 block text-sm font-medium text-fg">Expiry Date</label>
+                  <input type="date" name="expiryDate" className="modal-input" />
                 </div>
               </div>
-              <div className="mt-6 flex justify-end gap-3">
-                <button type="button" onClick={() => setReplacing(null)} className="rounded-lg px-4 py-2 text-sm font-medium text-fg hover:bg-surface-2">Cancel</button>
-                <button type="submit" disabled={loading} className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50">
+              <div className="modal-footer">
+                <button type="button" onClick={() => setReplacing(null)} className="btn btn-ghost">Cancel</button>
+                <button type="submit" disabled={loading} className="btn btn-primary">
                   {loading ? "Uploading..." : "Replace"}
                 </button>
               </div>
             </form>
-          </div>
-        </div>
+        </Modal>
       )}
 
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-          <div className="w-full max-w-md rounded-2xl bg-surface p-6 shadow-2xl">
-            <h2 className="text-xl font-bold text-fg mb-4">Upload Document</h2>
+        <Modal title="Upload Document" size="md" onClose={() => setIsModalOpen(false)}>
             <form ref={formRef} onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-fg">Entity Type</label>
-                <select name="entityType" className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-blue-500 focus:outline-none">
+                <label className="mb-1.5 block text-sm font-medium text-fg">Entity Type</label>
+                <select name="entityType" className="modal-input">
                   <option value="TRUCK">Truck</option>
                   <option value="TRAILER">Trailer</option>
                   <option value="DRIVER">Driver</option>
@@ -194,25 +192,25 @@ export function DocumentsClient({ initialDocuments }: { initialDocuments: Docume
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-fg">Entity ID (Unit #, Driver ID)</label>
-                <input name="entityId" required className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-blue-500 focus:outline-none" />
+                <label className="mb-1.5 block text-sm font-medium text-fg">Entity ID (Unit #, Driver ID)</label>
+                <input name="entityId" required className="modal-input" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-fg">Document Type</label>
-                <input name="type" placeholder="e.g., Registration, Insurance" required className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-blue-500 focus:outline-none" />
+                <label className="mb-1.5 block text-sm font-medium text-fg">Document Type</label>
+                <input name="type" placeholder="e.g., Registration, Insurance" required className="modal-input" />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-fg">Issue Date</label>
-                  <input type="date" name="issueDate" className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-blue-500 focus:outline-none" />
+                  <label className="mb-1.5 block text-sm font-medium text-fg">Issue Date</label>
+                  <input type="date" name="issueDate" className="modal-input" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-fg">Expiry Date</label>
-                  <input type="date" name="expiryDate" className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-blue-500 focus:outline-none" />
+                  <label className="mb-1.5 block text-sm font-medium text-fg">Expiry Date</label>
+                  <input type="date" name="expiryDate" className="modal-input" />
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-fg">File</label>
+                <label className="mb-1.5 block text-sm font-medium text-fg">File</label>
                 <div className="mt-1 flex justify-center rounded-md border-2 border-dashed border-border px-6 pt-5 pb-6">
                   <div className="space-y-1 text-center">
                     <Upload className="mx-auto h-12 w-12 text-faint" />
@@ -228,15 +226,14 @@ export function DocumentsClient({ initialDocuments }: { initialDocuments: Docume
                 </div>
               </div>
               
-              <div className="mt-6 flex justify-end gap-3">
-                <button type="button" onClick={() => setIsModalOpen(false)} className="rounded-lg px-4 py-2 text-sm font-medium text-fg hover:bg-surface-2">Cancel</button>
-                <button type="submit" disabled={loading} className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50">
+              <div className="modal-footer">
+                <button type="button" onClick={() => setIsModalOpen(false)} className="btn btn-ghost">Cancel</button>
+                <button type="submit" disabled={loading} className="btn btn-primary">
                   {loading ? "Uploading..." : "Upload"}
                 </button>
               </div>
             </form>
-          </div>
-        </div>
+        </Modal>
       )}
     </div>
   );

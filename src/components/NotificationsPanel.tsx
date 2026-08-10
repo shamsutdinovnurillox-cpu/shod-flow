@@ -48,7 +48,7 @@ export function NotificationsPanel({ notifications }: { notifications: Notificat
   };
 
   return (
-    <div className="rounded-xl border border-border bg-surface shadow-sm p-6">
+    <div className="card p-6">
       <div className="flex items-center gap-2 mb-4">
         <Bell className="h-5 w-5 text-fg" />
         <h2 className="text-xl font-bold text-fg">Notifications</h2>

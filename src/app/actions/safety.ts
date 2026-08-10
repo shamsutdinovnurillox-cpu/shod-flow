@@ -5,7 +5,18 @@ import { revalidatePath } from "next/cache";
 import { requireUser, requirePermission, requireAdmin } from "@/lib/auth-guard";
 import { toUserMessage, requireField, ValidationError } from "@/lib/errors";
 import { changedFields, writeAudit } from "@/lib/audit";
-import type { InsuranceType, InsuranceStatus, EventStatus, InspectionStatus } from "@prisma/client";
+import type { InsuranceType, InsuranceStatus, EventStatus, InspectionStatus, DriverType, DriverStatus } from "@prisma/client";
+
+const DRIVER_TYPES: DriverType[] = ["COMPANY", "OWNER_OPERATOR", "LEASE_PURCHASE"];
+
+/** Haydovchi turini tekshiradi (Company / Owner operator / Lease purchase). */
+function parseDriverType(v: string | undefined): DriverType | undefined {
+  if (v === undefined || v === "") return undefined;
+  if (!DRIVER_TYPES.includes(v as DriverType)) {
+    throw new ValidationError("Haydovchi turi noto'g'ri.");
+  }
+  return v as DriverType;
+}
 
 // ============================================================================
 // SAFETY actions. Driver — SHARED master data (o'qish har qanday login uchun).
@@ -23,6 +34,7 @@ export interface DriverInput {
   cdlExpiryDate: string;
   medCardExpiryDate: string;
   hireDate: string;
+  driverType?: string;
   notes?: string;
 }
 
@@ -56,6 +68,7 @@ export async function createDriver(data: DriverInput) {
         medCardExpiryDate: new Date(data.medCardExpiryDate),
         hireDate: new Date(data.hireDate),
         status: "ACTIVE",
+        driverType: parseDriverType(data.driverType) ?? "COMPANY",
         notes: data.notes?.trim() || null,
       },
     });
@@ -81,6 +94,7 @@ export interface DriverUpdateInput {
   cdlExpiryDate?: string;
   medCardExpiryDate?: string;
   hireDate?: string;
+  driverType?: string;
   notes?: string;
 }
 
@@ -100,6 +114,7 @@ export async function updateDriver(id: string, data: DriverUpdateInput) {
       cdlExpiryDate: data.cdlExpiryDate ? new Date(data.cdlExpiryDate) : undefined,
       medCardExpiryDate: data.medCardExpiryDate ? new Date(data.medCardExpiryDate) : undefined,
       hireDate: data.hireDate ? new Date(data.hireDate) : undefined,
+      driverType: parseDriverType(data.driverType),
       notes: data.notes === undefined ? undefined : data.notes.trim() || null,
     };
 
@@ -155,6 +170,41 @@ export async function reactivateDriver(id: string) {
     await writeAudit(prisma, {
       userId: user.id, action: "STATUS_CHANGE", entityType: "Driver", entityId: id,
       details: { status: { from: "TERMINATED", to: "ACTIVE" } },
+    });
+
+    revalidatePath("/safety/drivers");
+    revalidatePath(`/safety/drivers/${id}`);
+    return driver;
+  } catch (e) {
+    throw new Error(toUserMessage(e));
+  }
+}
+
+/**
+ * Haydovchi holatini o'rnatadi (Active / On Leave / Terminated).
+ * TERMINATED bo'lganda sana yoziladi, boshqasiga qaytganda tozalanadi.
+ */
+export async function setDriverStatus(id: string, status: string, date?: string) {
+  const user = await requirePermission("safety.drivers");
+  try {
+    const valid: DriverStatus[] = ["ACTIVE", "ON_LEAVE", "TERMINATED"];
+    if (!valid.includes(status as DriverStatus)) throw new ValidationError("Holat noto'g'ri.");
+
+    const existing = await prisma.driver.findUnique({ where: { id } });
+    if (!existing) throw new ValidationError("Haydovchi topilmadi.");
+    if (existing.status === status) throw new ValidationError("Haydovchi allaqachon shu holatda.");
+
+    const driver = await prisma.driver.update({
+      where: { id },
+      data: {
+        status: status as DriverStatus,
+        terminationDate:
+          status === "TERMINATED" ? (date ? new Date(date) : new Date()) : null,
+      },
+    });
+    await writeAudit(prisma, {
+      userId: user.id, action: "STATUS_CHANGE", entityType: "Driver", entityId: id,
+      details: { status: { from: existing.status, to: status } },
     });
 
     revalidatePath("/safety/drivers");

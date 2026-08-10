@@ -53,7 +53,7 @@ export function EntityDocumentsPanel({
   };
 
   return (
-    <div className="rounded-xl border border-border bg-surface shadow-sm p-6">
+    <div className="card p-6">
       <h2 className="text-lg font-bold text-fg mb-3">Files ({documents.length})</h2>
 
       {documents.length === 0 ? (
@@ -82,14 +82,14 @@ export function EntityDocumentsPanel({
 
       <form ref={formRef} onSubmit={handleUpload} className="flex flex-wrap items-end gap-3 pt-3 border-t border-border">
         <div>
-          <label className="block text-xs font-medium text-muted mb-1">Document Type</label>
+          <label className="mb-1.5 block text-xs font-medium text-muted">Document Type</label>
           <input name="type" defaultValue={defaultDocType} required className="modal-input !mt-0 w-44" />
         </div>
         <div>
-          <label className="block text-xs font-medium text-muted mb-1">File (PDF/PNG/JPG, max 10MB)</label>
+          <label className="mb-1.5 block text-xs font-medium text-muted">File (PDF/PNG/JPG, max 10MB)</label>
           <input name="file" type="file" required className="block text-sm text-muted file:mr-3 file:rounded-lg file:border-0 file:bg-blue-50 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-blue-700 hover:file:bg-blue-100" />
         </div>
-        <button type="submit" disabled={loading} className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50">
+        <button type="submit" disabled={loading} className="flex items-center gap-2 btn btn-primary">
           <Upload className="h-4 w-4" />
           {loading ? "Uploading..." : "Upload"}
         </button>

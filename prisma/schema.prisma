@@ -59,6 +59,7 @@ model Driver {
   firstName         String
   lastName          String
   status            DriverStatus @default(ACTIVE)
+  driverType        DriverType   @default(COMPANY)
   dob               DateTime
   cdlNumber         String    @unique
   cdlState          String
@@ -81,7 +82,14 @@ model Driver {
 
 enum DriverStatus {
   ACTIVE
+  ON_LEAVE
   TERMINATED
+}
+
+enum DriverType {
+  COMPANY        // Company driver
+  OWNER_OPERATOR // Owner operator
+  LEASE_PURCHASE // Lease purchase
 }
 
 model Truck {
@@ -96,13 +104,11 @@ model Truck {
   status       AssetStatus @default(UNASSIGNED)
   notes        String?
 
-  // Devices
-  motiveGateway String?  @unique
-  camera        String?  @unique
-  prePass       String?  @unique
-  eldPt30       String?  @unique
-  tablet        String?  @unique
-  chains        Boolean  @default(false)
+  // Amal qilish muddatlari (TZ 4.2 "Truck qo'shish" — amal qilish muddatlari)
+  registrationExpiry   DateTime? // Reg. Exp.
+  annualInspectionDate DateTime? // Insp. Year
+
+  // Qurilmalar endi alohida Device jadvalida (pastga qarang).
 
   assignments   Assignment[]
   services      Service[]
@@ -111,9 +117,72 @@ model Truck {
   cargoClaims   CargoClaim[]
   inspections   Inspection[]
   insurances    Insurance[]
+  devices       Device[]
+  deviceAssignments DeviceAssignment[]
 
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+}
+
+/// Qurilmalar reyestri (Motive Gateway, kamera, PrePass, ELD, planshet va h.k.).
+/// Truck'ga biriktirilishi mumkin, lekin omborda (truckId = null) ham turishi mumkin.
+model Device {
+  id         String          @id @default(uuid())
+  name       String          // Nomi
+  type       DeviceType      @default(OTHER) // Turi — Trucks jadvalidagi ustunga moslash uchun
+  serialNumber String?       @unique // S/N — TZ 4.2: fleet bo'ylab takrorlanmas
+  vin        String?         // VIN raqami (o'rnatilgan truck VIN'i yoki qurilma seriyasi)
+  expiryDate DateTime?       // Muddati
+  condition  DeviceCondition @default(NEW) // Holati
+  notes      String?
+
+  // Joriy truck — faol DeviceAssignment bilan sinxron saqlanadi (tez o'qish uchun).
+  truck      Truck?   @relation(fields: [truckId], references: [id])
+  truckId    String?
+
+  assignments DeviceAssignment[]
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([truckId])
+}
+
+/// Qurilmaning truck'lar bo'ylab harakati: qaysi sanadan qaysi sanagacha
+/// qaysi truckda turgani. Faol yozuvda removedAt = null.
+model DeviceAssignment {
+  id          String    @id @default(uuid())
+  device      Device    @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  deviceId    String
+  truck       Truck?    @relation(fields: [truckId], references: [id])
+  truckId     String?
+
+  installedAt DateTime  // O'rnatilgan sana
+  removedAt   DateTime? // Yechib olingan sana (faol bo'lsa null)
+  isActive    Boolean   @default(true)
+  notes       String?
+
+  createdAt   DateTime  @default(now())
+
+  @@index([deviceId])
+  @@index([truckId])
+}
+
+enum DeviceCondition {
+  NEW  // yangi
+  USED // ishlatilgan
+  OLD  // eski
+}
+
+/// TZ 4.2 dagi qurilma turlari — Trucks jadvalidagi S/N ustunlariga mos keladi.
+enum DeviceType {
+  MOTIVE_GATEWAY
+  CAMERA
+  PREPASS
+  ELD_PT30
+  TABLET
+  CHAINS
+  OTHER
 }
 
 model Trailer {

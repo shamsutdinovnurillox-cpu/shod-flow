@@ -15,6 +15,15 @@ function optText(v: string | undefined): string | null | undefined {
   return t === "" ? null : t;
 }
 
+/** Bo'sh string → null, aks holda Date. Noto'g'ri sana rad etiladi. */
+function optDate(v: string | undefined, label: string): Date | null | undefined {
+  if (v === undefined) return undefined;
+  if (v.trim() === "") return null;
+  const d = new Date(v);
+  if (Number.isNaN(d.getTime())) throw new ValidationError(`"${label}" sanasi noto'g'ri.`);
+  return d;
+}
+
 /** Delete'da FK cheklovi xatosini tushunarli matnga aylantiradi. */
 function deleteErrorMessage(e: unknown, what: string): string {
   if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2003") {
@@ -38,11 +47,29 @@ export interface TruckInput {
   ownershipType: string;
   location: string;
   notes?: string;
+  registrationExpiry?: string;
+  annualInspectionDate?: string;
 }
 
 export async function getTrucks() {
   await requireUser();
   return prisma.truck.findMany({ orderBy: { createdAt: "desc" } });
+}
+
+/**
+ * Trucks ro'yxati uchun to'liq qator (TZ 4.2 jadval ustunlari):
+ * joriy haydovchi + uning turi va olib ketish sanasi faol biriktiruvdan,
+ * qurilma S/N lari esa Device jadvalidan keladi.
+ */
+export async function getTruckRows() {
+  await requireUser();
+  return prisma.truck.findMany({
+    include: {
+      assignments: { where: { isActive: true }, include: { driver: true }, take: 1 },
+      devices: true,
+    },
+    orderBy: { createdAt: "desc" },
+  });
 }
 
 export async function createTruck(data: TruckInput) {
@@ -68,6 +95,8 @@ export async function createTruck(data: TruckInput) {
         ownershipType: data.ownershipType as OwnershipType,
         location: data.location.trim(),
         notes: data.notes?.trim() || null,
+        registrationExpiry: optDate(data.registrationExpiry, "Registratsiya muddati") ?? null,
+        annualInspectionDate: optDate(data.annualInspectionDate, "Yillik inspeksiya") ?? null,
       },
     });
 
@@ -91,12 +120,8 @@ export interface TruckUpdateInput {
   ownershipType?: string;
   location?: string;
   notes?: string;
-  motiveGateway?: string;
-  camera?: string;
-  prePass?: string;
-  eldPt30?: string;
-  tablet?: string;
-  chains?: boolean;
+  registrationExpiry?: string;
+  annualInspectionDate?: string;
 }
 
 export async function updateTruck(id: string, data: TruckUpdateInput) {
@@ -122,12 +147,8 @@ export async function updateTruck(id: string, data: TruckUpdateInput) {
       ownershipType: data.ownershipType ? (data.ownershipType as OwnershipType) : undefined,
       location: data.location?.trim() || undefined,
       notes: optText(data.notes),
-      motiveGateway: optText(data.motiveGateway),
-      camera: optText(data.camera),
-      prePass: optText(data.prePass),
-      eldPt30: optText(data.eldPt30),
-      tablet: optText(data.tablet),
-      chains: data.chains,
+      registrationExpiry: optDate(data.registrationExpiry, "Registratsiya muddati"),
+      annualInspectionDate: optDate(data.annualInspectionDate, "Yillik inspeksiya"),
     };
 
     const details = changedFields(existing, patch);
@@ -308,6 +329,10 @@ export async function getTruckById(id: string) {
       assignments: { include: { driver: true }, orderBy: { createdAt: "desc" } },
       services: { orderBy: { serviceDate: "desc" } },
       expenses: { orderBy: { date: "desc" } },
+      devices: {
+        include: { truck: true, assignments: { where: { isActive: true }, take: 1 } },
+        orderBy: { createdAt: "desc" },
+      },
     },
   });
 }

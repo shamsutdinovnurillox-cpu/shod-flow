@@ -10,7 +10,7 @@ export default async function SafetyNotificationsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold text-fg">Safety Notifications</h1>
+        <h1 className="text-2xl font-semibold tracking-tight text-fg">Safety Notifications</h1>
         <p className="text-muted mt-1">CDL/medical expirations, incidents, inspections, and insurance alerts.</p>
       </div>
       <NotificationsPanel notifications={notifications} />

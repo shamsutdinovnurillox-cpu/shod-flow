@@ -20,7 +20,11 @@ export const authConfig = {
       const isOnSafety = nextUrl.pathname.startsWith('/safety');
 
       if (isOnLogin) {
-        if (isLoggedIn) return Response.redirect(new URL('/', nextUrl));
+        // ?stale=1 — token haqiqiy, lekin undagi user bazada yo'q (yoki
+        // o'chirilgan). Bunday holatda login sahifasi cookie'ni tozalaydi.
+        // Bu istisnosiz middleware uni "/" ga qaytarib, cheksiz tsikl hosil bo'lardi.
+        const isStale = nextUrl.searchParams.has('stale');
+        if (isLoggedIn && !isStale) return Response.redirect(new URL('/', nextUrl));
         return true;
       }
 

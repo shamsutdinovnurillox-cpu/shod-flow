@@ -1,0 +1,28 @@
+# Lokal development uchun PostgreSQL.
+# Prodda (Vercel) Neon ishlatiladi — versiya bir xil bo'lishi uchun postgres:17.
+#
+#   docker compose up -d      — bazani ishga tushirish
+#   docker compose down       — to'xtatish (ma'lumot saqlanadi)
+#   docker compose down -v    — to'xtatish + ma'lumotni o'chirish
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: shodflow-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: shodflow
+      POSTGRES_PASSWORD: shodflow
+      POSTGRES_DB: shodflow
+    # 5432 boshqa loyiha tomonidan band — shuning uchun hostda 5433.
+    ports:
+      - "5433:5432"
+    volumes:
+      - shodflow-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U shodflow -d shodflow"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  shodflow-pgdata:

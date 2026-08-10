@@ -23,6 +23,7 @@ export interface ModuleDef {
 export const MODULES: ModuleDef[] = [
   { key: "fleet.trucks", label: "Trucks", dept: "FLEET", href: "/fleet/trucks" },
   { key: "fleet.trailers", label: "Trailers", dept: "FLEET", href: "/fleet/trailers" },
+  { key: "fleet.devices", label: "Devices", dept: "FLEET", href: "/fleet/devices" },
   { key: "fleet.services", label: "Services", dept: "FLEET", href: "/fleet/services" },
   { key: "fleet.expenses", label: "Expenses", dept: "FLEET", href: "/fleet/expenses" },
   { key: "fleet.documents", label: "Documents", dept: "FLEET", href: "/fleet/documents" },
