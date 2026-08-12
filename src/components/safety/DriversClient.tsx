@@ -4,6 +4,7 @@ import { Modal } from "@/components/ui/profile";
 import { showError } from "@/components/ui/toast";
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { createDriver } from "@/app/actions/safety";
 import { Plus, Search, SlidersHorizontal } from "lucide-react";
 import type { Driver } from "@/types/models";
@@ -64,6 +65,7 @@ export function DriversClient({ initialDrivers }: { initialDrivers: Driver[] }) 
   const [drivers, setDrivers] = useState(initialDrivers);
   const [isModalOpen, setIsModalOpen] = useState(false);
   // Dashboard tezkor amali (`?new=1`) bilan kelinganda modal o'zi ochiladi.
+  const router = useRouter();
   useOpenOnNewParam(() => setIsModalOpen(true));
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState(emptyForm());
@@ -181,9 +183,19 @@ export function DriversClient({ initialDrivers }: { initialDrivers: Driver[] }) 
                 </tr>
               ) : (
                 filtered.map((driver) => (
-                  <tr key={driver.id} className="hover:bg-surface-2 transition-colors">
+                  // Butun qator bosiladi — ilgari faqat ism link edi va qatorning
+                  // qolgan qismini bosganda hech narsa ochilmasdi.
+                  <tr
+                    key={driver.id}
+                    onClick={() => router.push(`/safety/drivers/${driver.id}`)}
+                    className="group cursor-pointer transition-colors hover:bg-surface-2"
+                  >
                     <td className="px-4 py-3 font-medium">
-                      <Link href={`/safety/drivers/${driver.id}`} className="text-blue-600 hover:text-blue-800 hover:underline">
+                      <Link
+                        href={`/safety/drivers/${driver.id}`}
+                        onClick={(e) => e.stopPropagation()}
+                        className="text-fg group-hover:text-primary"
+                      >
                         {driver.firstName} {driver.lastName}
                       </Link>
                     </td>
