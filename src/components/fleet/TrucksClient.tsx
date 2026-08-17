@@ -11,6 +11,7 @@ import type { DeviceType } from "@prisma/client";
 import { ExpiryDate, fmtDate, useDayStart } from "@/components/ui/expiry";
 import { FilterButton, FilterDrawer, FilterField, FilterSelect, FilterDateRange } from "@/components/ui/filter-drawer";
 import { useOpenOnNewParam } from "@/components/ui/use-new-param";
+import { PageHeader } from "@/components/ui/page-header";
 
 const VIEWS = [
   { key: "ALL", label: "All" },
@@ -207,17 +208,21 @@ export function TrucksClient({ initialTrucks, history }: { initialTrucks: TruckR
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold tracking-tight text-fg">Trucks</h1>
-        <button
-          onClick={() => setIsModalOpen(true)}
-          className="btn btn-primary"
-        >
-          <Plus className="h-4 w-4" />
-          Add Truck
-        </button>
-      </div>
+      <PageHeader
+        title="Trucks"
+        actions={
+          <button
+            onClick={() => setIsModalOpen(true)}
+            className="btn btn-primary"
+          >
+            <Plus className="h-4 w-4" />
+            Add Truck
+          </button>
+        }
+      />
 
+      {/* View'lar va qidiruv qatori PageHeader'ning `children`'iga ko'chirilmadi:
+          u yerda `mt-4` bo'lardi, tashqi `space-y-6` bergan oraliq esa saqlanishi kerak. */}
       {/* Views + search */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex gap-1 rounded-lg bg-surface-2 p-1">

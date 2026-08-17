@@ -6,7 +6,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { updateAccident, setAccidentStatus } from "@/app/actions/safety";
 import type { AccidentWithRefs, Truck, Document } from "@/types/models";
-import { ArrowLeft, AlertTriangle } from "lucide-react";
+import { AlertTriangle } from "lucide-react";
+import { BackLink } from "@/components/ui/back-link";
 import { DetailPanel, Row, Modal, Field, ModalActions } from "@/components/ui/profile";
 import { EntityDocumentsPanel } from "@/components/EntityDocumentsPanel";
 import { AuditTimeline } from "@/components/AuditTimeline";
@@ -63,9 +64,7 @@ export function AccidentDetailClient({ accident, trucks, documents, logs }: {
 
   return (
     <div className="space-y-8">
-      <Link href="/safety/accidents" className="inline-flex items-center gap-2 text-sm text-muted hover:text-fg">
-        <ArrowLeft className="h-4 w-4" /> Back to Accidents
-      </Link>
+      <BackLink href="/safety/accidents" label="Back to Accidents" />
 
       <div className="flex flex-wrap items-center gap-4">
         <div className="p-3 bg-red-100 text-red-600 rounded-xl"><AlertTriangle className="h-8 w-8" /></div>

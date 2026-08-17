@@ -8,6 +8,7 @@ import { createCargoClaim } from "@/app/actions/safety";
 import { Plus } from "lucide-react";
 import type { CargoClaimWithRefs, Driver, Truck } from "@/types/models";
 import { useOpenOnNewParam } from "@/components/ui/use-new-param";
+import { PageHeader } from "@/components/ui/page-header";
 
 export function CargoClaimsClient({ initialClaims, drivers, trucks }: { initialClaims: CargoClaimWithRefs[], drivers: Driver[], trucks: Truck[] }) {
   const [claims, setClaims] = useState(initialClaims);
@@ -46,16 +47,20 @@ export function CargoClaimsClient({ initialClaims, drivers, trucks }: { initialC
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold tracking-tight text-fg">Cargo Claims</h1>
-        <button
-          onClick={() => setIsModalOpen(true)}
-          className="btn btn-primary"
-        >
-          <Plus className="h-4 w-4" />
-          File Claim
-        </button>
-      </div>
+      {/* `backHref` berilmaydi: manzil /safety/* bo'lgani uchun bo'lim ildizi
+          ("Back to Safety") o'zi keltirib chiqariladi. */}
+      <PageHeader
+        title="Cargo Claims"
+        actions={
+          <button
+            onClick={() => setIsModalOpen(true)}
+            className="btn btn-primary"
+          >
+            <Plus className="h-4 w-4" />
+            File Claim
+          </button>
+        }
+      />
 
       <div className="card overflow-hidden">
         <div className="overflow-x-auto">

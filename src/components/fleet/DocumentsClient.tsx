@@ -1,6 +1,7 @@
 "use client";
 
 import { Modal } from "@/components/ui/profile";
+import { PageHeader } from "@/components/ui/page-header";
 import { showError } from "@/components/ui/toast";
 import { useState, useRef } from "react";
 import { createDocument, deleteDocument, replaceDocument } from "@/app/actions/documents";
@@ -76,16 +77,15 @@ export function DocumentsClient({ initialDocuments }: { initialDocuments: Docume
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold tracking-tight text-fg">Documents</h1>
-        <button
-          onClick={() => setIsModalOpen(true)}
-          className="btn btn-primary"
-        >
-          <Plus className="h-4 w-4" />
-          Upload Document
-        </button>
-      </div>
+      <PageHeader
+        title="Documents"
+        actions={
+          <button onClick={() => setIsModalOpen(true)} className="btn btn-primary">
+            <Plus className="h-4 w-4" />
+            Upload Document
+          </button>
+        }
+      />
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {latestDocs.length === 0 ? (

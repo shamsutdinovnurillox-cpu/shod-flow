@@ -1,6 +1,7 @@
 "use client";
 
 import { showError } from "@/components/ui/toast";
+import { PageHeader } from "@/components/ui/page-header";
 import { useState, useRef } from "react";
 import { createInsurance, setInsuranceStatus } from "@/app/actions/safety";
 import { createDocument } from "@/app/actions/documents";
@@ -95,16 +96,15 @@ export function InsuranceClient({ initialInsurance, drivers, trucks, initialCoiD
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold tracking-tight text-fg">Insurance Policies</h1>
-        <button
-          onClick={() => setIsModalOpen(true)}
-          className="btn btn-primary"
-        >
-          <Plus className="h-4 w-4" />
-          Add Policy
-        </button>
-      </div>
+      <PageHeader
+        title="Insurance Policies"
+        actions={
+          <button onClick={() => setIsModalOpen(true)} className="btn btn-primary">
+            <Plus className="h-4 w-4" />
+            Add Policy
+          </button>
+        }
+      />
 
       <div className="card overflow-hidden">
         <div className="overflow-x-auto">

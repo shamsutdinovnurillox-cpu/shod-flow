@@ -3,12 +3,24 @@
 import { useState } from "react";
 import { changeOwnPassword } from "@/app/actions/account";
 import { KeyRound, Check } from "lucide-react";
+import { PageHeader } from "@/components/ui/page-header";
+
+/**
+ * `/account` hech qaysi bo'lim ostida emas, shuning uchun PageHeader manzilni
+ * o'zi to'g'ri topa olmaydi — foydalanuvchining bo'limidan kelib chiqamiz.
+ */
+function landingFor(department?: string): { href: string; label: string } {
+  if (department === "SAFETY") return { href: "/safety/dashboard", label: "Back to Safety" };
+  if (department === "ADMIN") return { href: "/admin", label: "Back to Admin" };
+  return { href: "/fleet/dashboard", label: "Back to Fleet" };
+}
 
 export function AccountClient({
   user,
 }: {
   user: { name?: string | null; email?: string | null; role?: string; department?: string };
 }) {
+  const landing = landingFor(user.department);
   const [form, setForm] = useState({ currentPassword: "", newPassword: "", confirm: "" });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -36,10 +48,12 @@ export function AccountClient({
 
   return (
     <div className="max-w-2xl space-y-8">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-fg">Account settings</h1>
-        <p className="text-sm text-muted mt-0.5">Manage your profile and password.</p>
-      </div>
+      <PageHeader
+        title="Account settings"
+        subtitle="Manage your profile and password."
+        backHref={landing.href}
+        backLabel={landing.label}
+      />
 
       {/* Profil ma'lumoti */}
       <div className="card p-6">

@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { ArrowLeft, User, CreditCard, Truck } from "lucide-react";
+import { User, CreditCard, Truck } from "lucide-react";
+import { BackLink } from "@/components/ui/back-link";
 import { InfoCard, DetailPanel, Row, HistoryTable } from "@/components/ui/profile";
 import { DriverActions } from "@/components/safety/DriverActions";
 import type { DriverProfile, Document } from "@/types/models";
@@ -61,9 +62,9 @@ export function DriverProfileView({ driver, documents }: { driver: DriverProfile
 
   return (
     <div className="space-y-8">
-      <Link href="/safety/drivers" className="inline-flex items-center gap-2 text-sm text-muted hover:text-fg">
-        <ArrowLeft className="h-4 w-4" /> Back to Drivers
-      </Link>
+      {/* Haydovchi profiliga hodisa/da'vo/tekshiruv sahifalaridan ham kiriladi —
+          shuning uchun manzil qat'iy: tarix foydalanuvchini begona bo'limga qaytarardi. */}
+      <BackLink href="/safety/drivers" label="Back to Drivers" />
 
       <div className="flex flex-wrap items-center gap-4">
         <div className="p-3 bg-emerald-100 text-emerald-600 rounded-xl"><User className="h-8 w-8" /></div>

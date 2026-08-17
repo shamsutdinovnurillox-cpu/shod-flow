@@ -8,6 +8,7 @@ import { createAccident } from "@/app/actions/safety";
 import { Plus } from "lucide-react";
 import type { AccidentWithRefs, Driver, Truck } from "@/types/models";
 import { useOpenOnNewParam } from "@/components/ui/use-new-param";
+import { PageHeader } from "@/components/ui/page-header";
 
 export function AccidentsClient({ initialAccidents, drivers, trucks }: { initialAccidents: AccidentWithRefs[], drivers: Driver[], trucks: Truck[] }) {
   const [accidents, setAccidents] = useState(initialAccidents);
@@ -48,16 +49,20 @@ export function AccidentsClient({ initialAccidents, drivers, trucks }: { initial
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold tracking-tight text-fg">Accidents</h1>
-        <button
-          onClick={() => setIsModalOpen(true)}
-          className="btn btn-primary"
-        >
-          <Plus className="h-4 w-4" />
-          Log Accident
-        </button>
-      </div>
+      {/* `backHref` berilmaydi: manzil /safety/* bo'lgani uchun bo'lim ildizi
+          ("Back to Safety") o'zi keltirib chiqariladi. */}
+      <PageHeader
+        title="Accidents"
+        actions={
+          <button
+            onClick={() => setIsModalOpen(true)}
+            className="btn btn-primary"
+          >
+            <Plus className="h-4 w-4" />
+            Log Accident
+          </button>
+        }
+      />
 
       <div className="card overflow-hidden">
         <div className="overflow-x-auto">

@@ -6,7 +6,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { assignTruck, moveTruck, updateTruck } from "@/app/actions/fleet";
 import type { TruckProfile, Driver } from "@/types/models";
-import { ArrowLeft, Truck, User, MapPin, Wrench, DollarSign } from "lucide-react";
+import { Truck, User, MapPin, Wrench, DollarSign } from "lucide-react";
+import { BackLink } from "@/components/ui/back-link";
 import { money, InfoCard, DetailPanel, Row, HistoryTable, Modal, Field, ModalActions } from "@/components/ui/profile";
 import { DeviceAssignmentPanel, DeviceHistoryPanel } from "@/components/fleet/DevicesPanel";
 import type { DeviceAssignmentRow } from "@/types/models";
@@ -112,9 +113,7 @@ export function TruckProfileClient({
 
   return (
     <div className="space-y-8">
-      <Link href="/fleet/trucks" className="inline-flex items-center gap-2 text-sm text-muted hover:text-fg">
-        <ArrowLeft className="h-4 w-4" /> Back to Trucks
-      </Link>
+      <BackLink href="/fleet/trucks" label="Back to Trucks" />
 
       {/* Header */}
       <div className="flex flex-wrap items-start justify-between gap-4">

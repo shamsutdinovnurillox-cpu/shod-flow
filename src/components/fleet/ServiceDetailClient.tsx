@@ -1,11 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import { BackLink } from "@/components/ui/back-link";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import {
-  ArrowLeft,
   Wrench,
   DollarSign,
   Gauge,
@@ -143,12 +143,7 @@ export function ServiceDetailClient({
 
   return (
     <div className="space-y-6 lg:space-y-8">
-      <Link
-        href="/fleet/services"
-        className="inline-flex items-center gap-2 text-sm text-muted transition-colors hover:text-fg"
-      >
-        <ArrowLeft className="h-4 w-4" /> Back to Services
-      </Link>
+      <BackLink href="/fleet/services" label="Back to Services" />
 
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="flex min-w-0 items-center gap-4">

@@ -1,12 +1,13 @@
 "use client";
 
 import { showError } from "@/components/ui/toast";
+import { BackLink } from "@/components/ui/back-link";
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { updateCargoClaim, setCargoClaimStatus } from "@/app/actions/safety";
 import type { CargoClaimWithRefs, Truck, Document } from "@/types/models";
-import { ArrowLeft, PackageX } from "lucide-react";
+import { PackageX } from "lucide-react";
 import { DetailPanel, Row, Modal, Field, ModalActions } from "@/components/ui/profile";
 import { EntityDocumentsPanel } from "@/components/EntityDocumentsPanel";
 import { AuditTimeline } from "@/components/AuditTimeline";
@@ -63,9 +64,7 @@ export function CargoClaimDetailClient({ claim, trucks, documents, logs }: {
 
   return (
     <div className="space-y-8">
-      <Link href="/safety/cargo-claims" className="inline-flex items-center gap-2 text-sm text-muted hover:text-fg">
-        <ArrowLeft className="h-4 w-4" /> Back to Cargo Claims
-      </Link>
+      <BackLink href="/safety/cargo-claims" label="Back to Cargo Claims" />
 
       <div className="flex flex-wrap items-center gap-4">
         <div className="p-3 bg-orange-100 text-orange-600 rounded-xl"><PackageX className="h-8 w-8" /></div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { showError } from "@/components/ui/toast";
+import { PageHeader } from "@/components/ui/page-header";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createUser, setUserActive, updateUserRole, adminResetPassword, updateUserPermissions } from "@/app/actions/users";
@@ -69,19 +70,21 @@ export function UsersClient({ users, currentUserId }: { users: UserRow[]; curren
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-fg">Users</h1>
-          <p className="text-sm text-muted mt-0.5">Create, assign roles, deactivate, and reset passwords.</p>
-        </div>
-        <button
-          onClick={() => { setAddForm({ name: "", email: "", password: "", role: "FLEET_USER", department: "FLEET" }); setModal("add"); }}
-          className="btn btn-primary"
-        >
-          <UserPlus className="h-4 w-4" />
-          Add User
-        </button>
-      </div>
+      <PageHeader
+        title="Users"
+        subtitle="Create, assign roles, deactivate, and reset passwords."
+        backHref="/admin"
+        backLabel="Back to Admin Panel"
+        actions={
+          <button
+            onClick={() => { setAddForm({ name: "", email: "", password: "", role: "FLEET_USER", department: "FLEET" }); setModal("add"); }}
+            className="btn btn-primary"
+          >
+            <UserPlus className="h-4 w-4" />
+            Add User
+          </button>
+        }
+      />
 
       <div className="card overflow-hidden">
         <div className="overflow-x-auto">

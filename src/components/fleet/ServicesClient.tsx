@@ -1,6 +1,7 @@
 "use client";
 
 import { showError } from "@/components/ui/toast";
+import { PageHeader } from "@/components/ui/page-header";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
@@ -253,18 +254,16 @@ export function ServicesClient({
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-fg">Services</h1>
-          <p className="mt-0.5 text-sm text-muted">
-            {services.length} {services.length === 1 ? "record" : "records"} · maintenance history
-          </p>
-        </div>
-        <button onClick={() => setIsModalOpen(true)} className="btn btn-primary">
-          <Plus className="h-4 w-4" />
-          Add Service
-        </button>
-      </div>
+      <PageHeader
+        title="Services"
+        subtitle={`${services.length} ${services.length === 1 ? "record" : "records"} · maintenance history`}
+        actions={
+          <button onClick={() => setIsModalOpen(true)} className="btn btn-primary">
+            <Plus className="h-4 w-4" />
+            Add Service
+          </button>
+        }
+      />
 
       <div className="card overflow-hidden">
         <div className="overflow-x-auto">

@@ -1,6 +1,7 @@
 "use client";
 
 import { showError } from "@/components/ui/toast";
+import { PageHeader } from "@/components/ui/page-header";
 import { useState } from "react";
 import { createExpense, updateExpense, setExpensePaymentStatus } from "@/app/actions/expenses";
 import { Plus } from "lucide-react";
@@ -115,16 +116,15 @@ export function ExpensesClient({ initialExpenses, trucks, trailers }: { initialE
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold tracking-tight text-fg">Expenses</h1>
-        <button
-          onClick={() => setIsModalOpen(true)}
-          className="btn btn-primary"
-        >
-          <Plus className="h-4 w-4" />
-          Add Expense
-        </button>
-      </div>
+      <PageHeader
+        title="Expenses"
+        actions={
+          <button onClick={() => setIsModalOpen(true)} className="btn btn-primary">
+            <Plus className="h-4 w-4" />
+            Add Expense
+          </button>
+        }
+      />
 
       {/* Filtrlar + jamlamalar (PRD 4.6) */}
       <div className="flex flex-wrap items-end gap-3">

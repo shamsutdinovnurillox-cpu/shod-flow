@@ -251,6 +251,13 @@ model Assignment {
   isActive    Boolean   @default(true)
   
   createdAt   DateTime  @default(now())
+
+  // Ro'yxatlar sana va unit bo'yicha filtrlanadi; bazada bu ustunlar
+  // indekssiz edi va har bir filtr to'liq jadval skanini keltirardi.
+  @@index([driverId])
+  @@index([truckId])
+  @@index([trailerId])
+  @@index([isActive])
 }
 
 model Service {
@@ -274,6 +281,13 @@ model Service {
   
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
+
+  // Ro'yxatlar sana va unit bo'yicha filtrlanadi; bazada bu ustunlar
+  // indekssiz edi va har bir filtr to'liq jadval skanini keltirardi.
+  @@index([serviceDate])
+  @@index([truckId])
+  @@index([trailerId])
+  @@index([status])
 }
 
 enum ServiceStatus {
@@ -299,6 +313,12 @@ model Expense {
   attachmentUrl String?   // S3 file URL
 
   createdAt     DateTime  @default(now())
+
+  // Ro'yxatlar sana va unit bo'yicha filtrlanadi; bazada bu ustunlar
+  // indekssiz edi va har bir filtr to'liq jadval skanini keltirardi.
+  @@index([date])
+  @@index([truckId])
+  @@index([trailerId])
 }
 
 enum ExpenseCategory {
@@ -336,6 +356,12 @@ model Insurance {
   
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
+
+  // Ro'yxatlar sana va unit bo'yicha filtrlanadi; bazada bu ustunlar
+  // indekssiz edi va har bir filtr to'liq jadval skanini keltirardi.
+  @@index([driverId])
+  @@index([truckId])
+  @@index([status])
 }
 
 enum InsuranceType {
@@ -369,6 +395,11 @@ model Accident {
 
   createdAt            DateTime @default(now())
   updatedAt            DateTime @updatedAt
+
+  // Ro'yxatlar sana va unit bo'yicha filtrlanadi; bazada bu ustunlar
+  // indekssiz edi va har bir filtr to'liq jadval skanini keltirardi.
+  @@index([driverId])
+  @@index([date])
 }
 
 model CargoClaim {
@@ -389,6 +420,11 @@ model CargoClaim {
 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
+  // Ro'yxatlar sana va unit bo'yicha filtrlanadi; bazada bu ustunlar
+  // indekssiz edi va har bir filtr to'liq jadval skanini keltirardi.
+  @@index([driverId])
+  @@index([date])
 }
 
 model Inspection {
@@ -408,6 +444,12 @@ model Inspection {
 
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
+
+  // Ro'yxatlar sana va unit bo'yicha filtrlanadi; bazada bu ustunlar
+  // indekssiz edi va har bir filtr to'liq jadval skanini keltirardi.
+  @@index([date])
+  @@index([driverId])
+  @@index([truckId])
 }
 
 enum EventStatus {
@@ -439,6 +481,12 @@ model Document {
   uploadedBy String   // User ID
 
   createdAt  DateTime @default(now())
+
+  // Ro'yxatlar sana va unit bo'yicha filtrlanadi; bazada bu ustunlar
+  // indekssiz edi va har bir filtr to'liq jadval skanini keltirardi.
+  @@index([entityType, entityId])
+  @@index([type])
+  @@index([expiryDate])
 }
 
 model Notification {
@@ -453,6 +501,11 @@ model Notification {
 
   createdAt  DateTime @default(now())
   updatedAt  DateTime @default(now()) @updatedAt
+
+  // Cron har kuni har bir qoida uchun `type:entityId` bo'yicha dublikat
+  // bor-yo'qligini tekshiradi; status esa ro'yxatni filtrlaydi.
+  @@index([type, entityId])
+  @@index([status])
 }
 
 enum NotificationStatus {

@@ -1,6 +1,7 @@
 "use client";
 
 import { Modal } from "@/components/ui/profile";
+import { PageHeader } from "@/components/ui/page-header";
 import { showError } from "@/components/ui/toast";
 import { useMemo, useState } from "react";
 import Link from "next/link";
@@ -108,16 +109,15 @@ export function DriversClient({ initialDrivers }: { initialDrivers: Driver[] }) 
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold tracking-tight text-fg">Drivers</h1>
-        <button
-          onClick={() => setIsModalOpen(true)}
-          className="btn btn-primary"
-        >
-          <Plus className="h-4 w-4" />
-          Add Driver
-        </button>
-      </div>
+      <PageHeader
+        title="Drivers"
+        actions={
+          <button onClick={() => setIsModalOpen(true)} className="btn btn-primary">
+            <Plus className="h-4 w-4" />
+            Add Driver
+          </button>
+        }
+      />
 
       {/* KPI kartalar */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">

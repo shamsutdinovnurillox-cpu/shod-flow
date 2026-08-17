@@ -1,6 +1,7 @@
 "use client";
 
 import { Modal } from "@/components/ui/profile";
+import { PageHeader } from "@/components/ui/page-header";
 import { showError } from "@/components/ui/toast";
 import { useState } from "react";
 import Link from "next/link";
@@ -56,16 +57,15 @@ export function InspectionsClient({ initialInspections, drivers, trucks }: { ini
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold tracking-tight text-fg">Inspections</h1>
-        <button
-          onClick={() => setIsModalOpen(true)}
-          className="btn btn-primary"
-        >
-          <Plus className="h-4 w-4" />
-          Log Inspection
-        </button>
-      </div>
+      <PageHeader
+        title="Inspections"
+        actions={
+          <button onClick={() => setIsModalOpen(true)} className="btn btn-primary">
+            <Plus className="h-4 w-4" />
+            Log Inspection
+          </button>
+        }
+      />
 
       <div className="card overflow-hidden">
         <div className="overflow-x-auto">

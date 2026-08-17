@@ -1,12 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import { BackLink } from "@/components/ui/back-link";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { showError } from "@/components/ui/toast";
 import { updateDevice, deleteDevice } from "@/app/actions/devices";
 import { Modal, ModalActions, DetailPanel, Row, InfoCard } from "@/components/ui/profile";
-import { ArrowLeft, Cpu, Truck as TruckIcon, CalendarClock, Wrench } from "lucide-react";
+import { Cpu, Truck as TruckIcon, CalendarClock, Wrench } from "lucide-react";
 import type { DeviceProfile, Truck } from "@/types/models";
 import {
   ConditionBadge, DeviceFormFields, deviceToForm, typeLabel, ChangeTruckModal, type DeviceForm,
@@ -68,9 +69,7 @@ export function DeviceProfileClient({ device, trucks }: { device: DeviceProfile;
 
   return (
     <div className="space-y-8">
-      <Link href="/fleet/devices" className="inline-flex items-center gap-2 text-sm text-muted hover:text-fg">
-        <ArrowLeft className="h-4 w-4" /> Back to Devices
-      </Link>
+      <BackLink href="/fleet/devices" label="Back to Devices" />
 
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="flex items-center gap-4">

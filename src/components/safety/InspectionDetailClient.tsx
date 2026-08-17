@@ -1,13 +1,14 @@
 "use client";
 
 import { showError } from "@/components/ui/toast";
+import { BackLink } from "@/components/ui/back-link";
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { updateInspection, setInspectionStatus } from "@/app/actions/safety";
 import type { InspectionWithRefs, Truck, Document } from "@/types/models";
 import type { InspectionStatus } from "@prisma/client";
-import { ArrowLeft, ClipboardCheck } from "lucide-react";
+import { ClipboardCheck } from "lucide-react";
 import { DetailPanel, Row, Modal, Field, ModalActions, money } from "@/components/ui/profile";
 import { EntityDocumentsPanel } from "@/components/EntityDocumentsPanel";
 import { AuditTimeline } from "@/components/AuditTimeline";
@@ -72,9 +73,7 @@ export function InspectionDetailClient({ inspection, trucks, documents, logs }: 
 
   return (
     <div className="space-y-8">
-      <Link href="/safety/inspections" className="inline-flex items-center gap-2 text-sm text-muted hover:text-fg">
-        <ArrowLeft className="h-4 w-4" /> Back to Inspections
-      </Link>
+      <BackLink href="/safety/inspections" label="Back to Inspections" />
 
       <div className="flex flex-wrap items-center gap-4">
         <div className="p-3 bg-yellow-100 text-yellow-600 rounded-xl"><ClipboardCheck className="h-8 w-8" /></div>

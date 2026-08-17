@@ -8,6 +8,7 @@ import { createTrailer } from "@/app/actions/fleet";
 import { Plus } from "lucide-react";
 import type { Trailer } from "@/types/models";
 import { useOpenOnNewParam } from "@/components/ui/use-new-param";
+import { PageHeader } from "@/components/ui/page-header";
 
 export function TrailersClient({ initialTrailers }: { initialTrailers: Trailer[] }) {
   const [trailers, setTrailers] = useState(initialTrailers);
@@ -56,16 +57,15 @@ export function TrailersClient({ initialTrailers }: { initialTrailers: Trailer[]
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold tracking-tight text-fg">Trailers</h1>
-        <button
-          onClick={() => setIsModalOpen(true)}
-          className="btn btn-primary"
-        >
-          <Plus className="h-4 w-4" />
-          Add Trailer
-        </button>
-      </div>
+      <PageHeader
+        title="Trailers"
+        actions={
+          <button onClick={() => setIsModalOpen(true)} className="btn btn-primary">
+            <Plus className="h-4 w-4" />
+            Add Trailer
+          </button>
+        }
+      />
 
       {/* Table */}
       <div className="card overflow-hidden">

@@ -2,11 +2,11 @@
 
 import { showError } from "@/components/ui/toast";
 import { useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { assignTrailer, dropTrailer, setTrailerStatus, updateTrailer } from "@/app/actions/fleet";
 import type { TrailerProfile, Driver } from "@/types/models";
-import { ArrowLeft, Container, User, MapPin, Wrench, DollarSign } from "lucide-react";
+import { Container, User, MapPin, Wrench, DollarSign } from "lucide-react";
+import { BackLink } from "@/components/ui/back-link";
 import { money, InfoCard, DetailPanel, Row, HistoryTable, Modal, Field, ModalActions } from "@/components/ui/profile";
 
 const today = () => new Date().toISOString().split("T")[0];
@@ -64,9 +64,7 @@ export function TrailerProfileClient({ trailer, drivers }: { trailer: TrailerPro
 
   return (
     <div className="space-y-8">
-      <Link href="/fleet/trailers" className="inline-flex items-center gap-2 text-sm text-muted hover:text-fg">
-        <ArrowLeft className="h-4 w-4" /> Back to Trailers
-      </Link>
+      <BackLink href="/fleet/trailers" label="Back to Trailers" />
 
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="flex items-center gap-4">

@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { PageHeader } from "@/components/ui/page-header";
 import Link from "next/link";
 import { showError } from "@/components/ui/toast";
 import { createDevice, updateDevice, deleteDevice } from "@/app/actions/devices";
@@ -109,9 +110,10 @@ export function DevicesClient({
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-semibold tracking-tight text-fg">Devices</h1>
-        <div className="flex flex-wrap gap-3">
+      <PageHeader
+        title="Devices"
+        actions={
+          <div className="flex flex-wrap gap-3">
           <button
             onClick={() => setPickingMove(true)}
             className="flex items-center gap-2 btn btn-secondary"
@@ -126,8 +128,9 @@ export function DevicesClient({
             <Plus className="h-4 w-4" />
             Add Device
           </button>
-        </div>
-      </div>
+          </div>
+        }
+      />
 
       <div className="flex flex-wrap gap-3">
         <input
