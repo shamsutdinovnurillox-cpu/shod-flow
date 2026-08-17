@@ -28,8 +28,14 @@ async function main() {
   });
 
   // ---- Namuna operatsion ma'lumot (faqat bo'sh bazada) ----
-  if ((await prisma.truck.count()) > 0) {
-    console.log("Users tayyor. Namuna ma'lumot allaqachon mavjud — o'tkazib yuborildi.");
+  // SEED_FORCE=1 bilan to'ldirilgan bazada ham qayta yugurtirish mumkin —
+  // busiz seed'ga kiritilgan har qanday o'zgarish `db:reset` qilmaguncha
+  // umuman ishlamasdi.
+  if ((await prisma.truck.count()) > 0 && process.env.SEED_FORCE !== "1") {
+    console.log(
+      "Users tayyor. Namuna ma'lumot allaqachon mavjud — o'tkazib yuborildi. " +
+        "(Majburlash uchun: SEED_FORCE=1 npm run db:seed)",
+    );
     return;
   }
 

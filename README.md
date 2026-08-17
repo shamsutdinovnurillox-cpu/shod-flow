@@ -2,7 +2,7 @@
 
 SHOD Express uchun ichki operatsion tizim: Fleet (trucks, trailers, services, expenses, documents) va Safety (drivers, insurance, accidents, cargo claims, inspections) bo'limlari bitta bazada, rol/bo'lim bo'yicha kirish nazorati bilan.
 
-**Stack:** Next.js 16 (App Router) · React 19 · Prisma 7 + PostgreSQL · NextAuth v5 (Credentials + TOTP MFA) · Tailwind CSS v4 · AWS S3 (yoki lokal disk) fayl saqlash.
+**Stack:** Next.js 16 (App Router) · React 19 · Prisma 7 + PostgreSQL · NextAuth v5 (Credentials) · Tailwind CSS v4 · AWS S3 (yoki lokal disk) fayl saqlash.
 
 ## Ishga tushirish (lokal)
 

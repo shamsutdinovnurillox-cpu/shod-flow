@@ -3,7 +3,6 @@ import Credentials from "next-auth/providers/credentials";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { prisma } from "./lib/prisma";
 import bcrypt from "bcryptjs";
-import { verifyToken } from "./lib/mfa";
 import { authConfig } from "./auth.config";
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
@@ -14,7 +13,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       credentials: {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
-        token: { label: "2FA Code", type: "text" },
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
@@ -38,14 +36,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
         if (!isValid) {
           return null;
-        }
-
-        // Ikki faktorli autentifikatsiya — yoqilgan bo'lsa TOTP kod ham talab qilinadi.
-        if (user.mfaEnabled) {
-          const token = (credentials.token as string | undefined) ?? "";
-          if (!user.mfaSecret || !verifyToken(token, user.mfaSecret)) {
-            return null;
-          }
         }
 
         return {

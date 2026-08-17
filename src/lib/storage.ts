@@ -98,3 +98,16 @@ export async function readLocalFile(id: string): Promise<StoredFile | null> {
     return null;
   }
 }
+
+/**
+ * Content-Disposition sarlavhasini xavfsiz yasaydi.
+ *
+ * Fayl nomida ASCII bo'lmagan belgi (kirill, o'zbekcha harflar) yoki qo'shtirnoq
+ * bo'lishi mumkin. RFC 6266 bo'yicha ikkita nom beriladi: eski mijozlar uchun
+ * tozalangan ASCII nom va zamonaviylar uchun UTF-8 da kodlangan `filename*`.
+ */
+export function contentDisposition(filename: string, download: boolean): string {
+  const type = download ? "attachment" : "inline";
+  const ascii = filename.replace(/[^ -~]/g, "_").replace(/["\\]/g, "_");
+  return `${type}; filename="${ascii}"; filename*=UTF-8''${encodeURIComponent(filename)}`;
+}

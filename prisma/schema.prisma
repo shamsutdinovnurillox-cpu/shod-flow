@@ -20,9 +20,11 @@ model User {
   // Granular ruxsatlar (modul kalitlari, masalan "fleet.trucks").
   // Bo'sh massiv = bo'lim ichida to'liq kirish (default). ADMIN — hammasi.
   permissions  String[]    @default([])
-  // Ikki faktorli autentifikatsiya (TOTP).
+  // ESKIRGAN — 2FA olib tashlangan, bu ustunlar hech qayerda o'qilmaydi.
+  // Ma'lumot yo'qotmaslik uchun destruktiv migratsiya qilinmadi; keyinchalik
+  // alohida migratsiya bilan tashlab yuborish mumkin.
   mfaEnabled   Boolean     @default(false)
-  mfaSecret    String?     // base32 TOTP maxfiy kaliti (mfaEnabled=false bo'lsa — sozlash bosqichida)
+  mfaSecret    String?
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
   AuditLogs    AuditLog[]

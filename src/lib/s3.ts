@@ -1,5 +1,6 @@
 import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { contentDisposition } from "@/lib/storage";
 
 const s3Client = new S3Client({
   region: process.env.S3_REGION || "us-east-1",
@@ -26,10 +27,23 @@ export const uploadFile = async (
   return await s3Client.send(command);
 };
 
-export const getFileUrl = async (bucket: string, key: string, expiresIn = 3600) => {
+/**
+ * Faylga vaqtinchalik havola.
+ *
+ * `filename` berilsa, S3 javob sarlavhasini `attachment` qilib qaytaradi —
+ * ya'ni brauzer faylni ochish o'rniga yuklab oladi. Busiz butun ilovada
+ * hujjatni yuklab olishning iloji yo'q edi.
+ */
+export const getFileUrl = async (
+  bucket: string,
+  key: string,
+  expiresIn = 3600,
+  filename?: string,
+) => {
   const command = new GetObjectCommand({
     Bucket: bucket,
     Key: key,
+    ...(filename ? { ResponseContentDisposition: contentDisposition(filename, true) } : {}),
   });
 
   return await getSignedUrl(s3Client, command, { expiresIn });

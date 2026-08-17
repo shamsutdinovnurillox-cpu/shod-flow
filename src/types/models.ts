@@ -4,7 +4,7 @@ import type { Prisma, Truck, Trailer, Driver, Document, AuditLog, User } from "@
 export type { Truck, Trailer, Driver, Document };
 
 // Foydalanuvchi (parol hash'isiz — client'ga xavfsiz).
-export type UserRow = Pick<User, "id" | "email" | "name" | "role" | "department" | "isActive" | "permissions" | "mfaEnabled" | "createdAt">;
+export type UserRow = Pick<User, "id" | "email" | "name" | "role" | "department" | "isActive" | "permissions" | "createdAt">;
 
 export type DeviceWithTruck = Prisma.DeviceGetPayload<{
   include: { truck: true; assignments: true };

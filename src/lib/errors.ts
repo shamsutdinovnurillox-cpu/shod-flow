@@ -28,7 +28,12 @@ export function toUserMessage(e: unknown): string {
 
   if (e instanceof Prisma.PrismaClientKnownRequestError) {
     if (e.code === "P2002") {
-      const targets = (e.meta?.target as string[] | undefined) ?? [];
+      // Prisma `target`ni ustunlar massivi sifatida beradi, lekin xatoni
+      // Postgres constraint nomi bilan qaytarganda (masalan qo'lda yozilgan
+      // SQL indeks) bu oddiy satr bo'ladi — massiv deb hisoblasak, .map()
+      // TypeError bilan uzilib, foydalanuvchi xato o'rniga 500 ko'rardi.
+      const raw = e.meta?.target;
+      const targets = Array.isArray(raw) ? (raw as string[]) : typeof raw === "string" ? [raw] : [];
       const labels = targets.map((t) => FIELD_LABELS[t] ?? t).join(", ");
       return labels
         ? `Bu qiymat allaqachon band: ${labels}. Fleet bo'yicha takrorlanmas bo'lishi kerak.`

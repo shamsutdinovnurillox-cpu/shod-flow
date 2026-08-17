@@ -3,11 +3,11 @@
 import { showError } from "@/components/ui/toast";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { createUser, setUserActive, updateUserRole, adminResetPassword, updateUserPermissions, adminDisableMfa } from "@/app/actions/users";
+import { createUser, setUserActive, updateUserRole, adminResetPassword, updateUserPermissions } from "@/app/actions/users";
 import type { UserRow } from "@/types/models";
 import { Modal, Field, ModalActions } from "@/components/ui/profile";
 import { FLEET_MODULES, SAFETY_MODULES } from "@/lib/modules";
-import { UserPlus, KeyRound, ShieldCheck, Power, ListChecks, Smartphone, ShieldOff } from "lucide-react";
+import { UserPlus, KeyRound, ShieldCheck, Power, ListChecks } from "lucide-react";
 
 const ROLES = ["ADMIN", "FLEET_USER", "SAFETY_USER"];
 const DEPTS = ["ADMIN", "FLEET", "SAFETY"];
@@ -92,14 +92,13 @@ export function UsersClient({ users, currentUserId }: { users: UserRow[]; curren
                 <th className="whitespace-nowrap px-5 py-3 text-xs font-semibold uppercase tracking-wide text-muted sm:px-6">Email</th>
                 <th className="whitespace-nowrap px-5 py-3 text-xs font-semibold uppercase tracking-wide text-muted sm:px-6">Role</th>
                 <th className="whitespace-nowrap px-5 py-3 text-xs font-semibold uppercase tracking-wide text-muted sm:px-6">Department</th>
-                <th className="whitespace-nowrap px-5 py-3 text-xs font-semibold uppercase tracking-wide text-muted sm:px-6">2FA</th>
                 <th className="whitespace-nowrap px-5 py-3 text-xs font-semibold uppercase tracking-wide text-muted sm:px-6">Status</th>
                 <th className="whitespace-nowrap px-5 py-3 text-xs font-semibold uppercase tracking-wide text-muted sm:px-6 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
               {users.length === 0 ? (
-                <tr><td colSpan={7} className="px-6 py-8 text-center text-muted">No users found.</td></tr>
+                <tr><td colSpan={6} className="px-6 py-8 text-center text-muted">No users found.</td></tr>
               ) : (
                 users.map((u) => {
                   const isSelf = u.id === currentUserId;
@@ -116,15 +115,6 @@ export function UsersClient({ users, currentUserId }: { users: UserRow[]; curren
                         </span>
                       </td>
                       <td className="px-5 py-3.5 sm:px-6">{u.department}</td>
-                      <td className="px-5 py-3.5 sm:px-6">
-                        {u.mfaEnabled ? (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-green-50 px-2 py-1 text-xs font-semibold text-green-700">
-                            <Smartphone className="h-3 w-3" /> On
-                          </span>
-                        ) : (
-                          <span className="text-xs text-faint">Off</span>
-                        )}
-                      </td>
                       <td className="px-5 py-3.5 sm:px-6">
                         <span className={`inline-flex items-center gap-1.5 rounded-full px-2 py-1 text-xs font-semibold ${u.isActive ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"}`}>
                           <span className={`h-1.5 w-1.5 rounded-full ${u.isActive ? "bg-green-500" : "bg-red-500"}`} />
@@ -147,15 +137,6 @@ export function UsersClient({ users, currentUserId }: { users: UserRow[]; curren
                           <button onClick={() => openReset(u)} title="Reset password" className="rounded-md p-1.5 text-muted hover:bg-surface-2 hover:text-fg">
                             <KeyRound className="h-4 w-4" />
                           </button>
-                          {u.mfaEnabled && (
-                            <button
-                              onClick={() => { if (confirm(`${u.name} uchun 2FA'ni o'chirasizmi?`)) run(() => adminDisableMfa(u.id), "2FA'ni o'chirib bo'lmadi."); }}
-                              title="Disable 2FA (reset)"
-                              className="rounded-md p-1.5 text-muted hover:bg-surface-2 hover:text-amber-600"
-                            >
-                              <ShieldOff className="h-4 w-4" />
-                            </button>
-                          )}
                           <button
                             onClick={() => run(() => setUserActive(u.id, !u.isActive), "Holatni o'zgartirib bo'lmadi.")}
                             disabled={isSelf}

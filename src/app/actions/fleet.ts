@@ -337,6 +337,20 @@ export async function getTruckById(id: string) {
   });
 }
 
+/**
+ * Topshirish sanasini o'qiydi. Bo'sh bo'lsa bugungi kun ishlatiladi;
+ * kelajakdagi sana qabul qilinmaydi — bu odatda terish xatosi.
+ */
+function parseDropoffDate(value?: string): Date {
+  if (!value) return new Date();
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) throw new ValidationError("Topshirish sanasi noto'g'ri.");
+  if (d.getTime() > Date.now() + 24 * 60 * 60 * 1000) {
+    throw new ValidationError("Topshirish sanasi kelajakda bo'lishi mumkin emas.");
+  }
+  return d;
+}
+
 /** Truck'ni haydovchiga biriktiradi → status ASSIGNED, tarixga yozuv. */
 export async function assignTruck(input: { truckId: string; driverId: string; pickupDate: string }) {
   const user = await requirePermission("fleet.trucks");
@@ -345,10 +359,12 @@ export async function assignTruck(input: { truckId: string; driverId: string; pi
     requireField(input.driverId, "Haydovchi");
 
     await prisma.$transaction(async (tx) => {
-      // Avvalgi faol biriktiruvni yopamiz.
+      // Avvalgi faol biriktiruvni yopamiz. Topshirish sanasi — yangi
+      // haydovchi qabul qilgan kun; `new Date()` bo'lsa, o'tgan sana bilan
+      // kiritilgan biriktiruvlar bugungi kun bilan yopilib, tarix buzilardi.
       await tx.assignment.updateMany({
         where: { truckId: input.truckId, isActive: true },
-        data: { isActive: false, dropoffDate: new Date() },
+        data: { isActive: false, dropoffDate: new Date(input.pickupDate) },
       });
       await tx.assignment.create({
         data: {
@@ -386,6 +402,8 @@ export async function moveTruck(input: {
   location?: string;
   reason?: string;
   notes?: string;
+  /** Haydovchi truck'ni topshirgan kun. Berilmasa — bugun. */
+  dropoffDate?: string;
 }) {
   const user = await requirePermission("fleet.trucks");
   try {
@@ -400,7 +418,7 @@ export async function moveTruck(input: {
           where: { truckId: input.truckId, isActive: true },
           data: {
             isActive: false,
-            dropoffDate: new Date(),
+            dropoffDate: parseDropoffDate(input.dropoffDate),
             location: input.location?.trim() || null,
             reason: input.reason?.trim() || null,
             notes: input.notes?.trim() || null,
@@ -445,9 +463,10 @@ export async function assignTrailer(input: { trailerId: string; driverId: string
     requireField(input.driverId, "Haydovchi");
 
     await prisma.$transaction(async (tx) => {
+      // Truck bilan bir xil qoida: eski biriktiruv yangi qabul kunida yopiladi.
       await tx.assignment.updateMany({
         where: { trailerId: input.trailerId, isActive: true },
-        data: { isActive: false, dropoffDate: new Date() },
+        data: { isActive: false, dropoffDate: new Date(input.pickupDate) },
       });
       await tx.assignment.create({
         data: {
@@ -474,7 +493,14 @@ export async function assignTrailer(input: { trailerId: string; driverId: string
 }
 
 /** Drop — faol biriktiruvni yopadi (manzil/sabab bilan) → status UNASSIGNED. */
-export async function dropTrailer(input: { trailerId: string; location?: string; reason?: string; notes?: string }) {
+export async function dropTrailer(input: {
+  trailerId: string;
+  location?: string;
+  reason?: string;
+  notes?: string;
+  /** Trailer topshirilgan kun. Berilmasa — bugun. */
+  dropoffDate?: string;
+}) {
   const user = await requirePermission("fleet.trailers");
   try {
     requireField(input.trailerId, "Trailer");
@@ -484,7 +510,7 @@ export async function dropTrailer(input: { trailerId: string; location?: string;
         where: { trailerId: input.trailerId, isActive: true },
         data: {
           isActive: false,
-          dropoffDate: new Date(),
+          dropoffDate: parseDropoffDate(input.dropoffDate),
           location: input.location?.trim() || null,
           reason: input.reason?.trim() || null,
           notes: input.notes?.trim() || null,

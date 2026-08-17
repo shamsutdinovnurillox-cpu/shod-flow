@@ -23,7 +23,6 @@ const USER_SELECT = {
   department: true,
   isActive: true,
   permissions: true,
-  mfaEnabled: true,
   createdAt: true,
 } as const;
 
@@ -124,22 +123,6 @@ export async function updateUserPermissions(userId: string, permissions: string[
     await prisma.user.update({ where: { id: userId }, data: { permissions: valid } });
     await prisma.auditLog.create({
       data: { userId: admin.id, action: "UPDATE_PERMISSIONS", entityType: "User", entityId: userId },
-    });
-    revalidatePath("/admin/users");
-  } catch (e) {
-    throw new Error(toUserMessage(e));
-  }
-}
-
-export async function adminDisableMfa(userId: string) {
-  const admin = await requireAdmin();
-  try {
-    await prisma.user.update({
-      where: { id: userId },
-      data: { mfaEnabled: false, mfaSecret: null },
-    });
-    await prisma.auditLog.create({
-      data: { userId: admin.id, action: "DISABLE_MFA", entityType: "User", entityId: userId },
     });
     revalidatePath("/admin/users");
   } catch (e) {
